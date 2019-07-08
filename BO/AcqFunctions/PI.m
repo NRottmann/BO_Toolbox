@@ -1,11 +1,11 @@
-function [x_next, alpha] = EI(x,s,y, varargin)
-% Acquisition Function for BO - Expected Improvement
+function [x_next, alpha] = PI(x,s,y,varargin)
+% Acquisition Function for BO - Probability of Improvement
 % Syntax:
-%   results = EI(x,s,y);
+%   results = PI(x,s,y);
 %   
 % Description:
-%   Calculates the expected improvement for the samples s using a GP
-%   fitted on points x and values y and returns the point in s with the higest EI.
+%   Calculates the probability of improvement for the samples s using a GP
+%   fitted on points x and values y and returns the point in s with the higest PI.
 %
 % Input:
 %   Input:
@@ -16,19 +16,17 @@ function [x_next, alpha] = EI(x,s,y, varargin)
 %   D: Dimension of the input space
 %
 % Output:
-%   x_next - point of s with highest EI
+%   x_next - point of s with highest PI
 %   alpha - PI values for all points in s
 %
 % Date: 07. July, 2019
 % Author: Michael Werner
 
 % Get mean and variance from the GP model
-[mu,sigma] = GP(x,s,y,varargin{:});
+[mu,sigma] = GP(x,s,y, varargin{:});
 sigma = diag(sigma);
 % Determine next evaluation point using an acquisition function
-tau = max(y);
-tmp = (mu - tau) ./ sigma;
-a = (mu - tau) .* normcdf(tmp) + sigma .* normpdf(tmp);
+a  = normcdf((mu - max(y)) ./ sigma);
 [~,ID] = max(a);
 x_next = s(:,ID);
 if nargout > 1

@@ -31,7 +31,7 @@ function [K,varargout] = se_kernel(X1,X2,varargin)
 % Author: Nils Rottman
 
 % Default values
-defaultargs = {'CovParam', [1; 1],'struct',0}; 
+defaultargs = {'CovParam', [0.1; 0.1],'struct',0}; 
 params = setargs(defaultargs, varargin);
 
 % look if hyperparameters are wanted

@@ -25,9 +25,9 @@ function results = BO(fun,vars,varargin)
 % Author: Nils Rottmann
 
 % Default values
-defaultargs = {'maxIter', 30, 'numSeed', 3, 'sampleSize', 1000}; 
+defaultargs = {'maxIter', 30, 'numSeed', 3, 'sampleSize', 1000, 'AcqFun', 'EI'}; 
 params = setargs(defaultargs, varargin);
-
+AcqFun = str2func(params.AcqFun);
 % Get number of variables to optimize
 numVar = length(vars);
 
@@ -57,7 +57,7 @@ for i=1:params.maxIter
         end
     end
     % Determine next evaluation point using GP and an acquisition function
-    x_next = EI(x(:,params.numSeed + (i-1)),s,y(params.numSeed + (i-1)));
+    x_next = AcqFun(x(:,params.numSeed + (i-1)),s,y(params.numSeed + (i-1)));
     % Get the next function value
     x_fun = struct();
     for j=1:numVar
