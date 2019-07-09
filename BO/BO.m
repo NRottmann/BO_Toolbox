@@ -1,5 +1,5 @@
 function results = BO(fun,vars,varargin)
-% Bayesian Optimization
+% Bayesian Optimization for maximum search
 %
 % Syntax:
 %   results = BO(fun,vars);
@@ -36,7 +36,7 @@ x = zeros(numVar,params.maxIter + params.numSeed);
 y = zeros(params.maxIter + params.numSeed,1);
 
 % Start by generating numSeed seedpoints for the BO algorithm
-for i=1:numSeed
+for i=1:params.numSeed
     x_fun = struct();
     for j=1:numVar
         x_fun.(vars(j).Name) = rand() * (vars(j).Range(2) - vars(j).Range(1)) ...
@@ -50,14 +50,14 @@ end
 for i=1:params.maxIter
     % Generate uniformly distributed sample distribution
     s = zeros(numVar,params.sampleSize);
-    for j=1:params.sampleSize
-        for l=1:numVar
+    for l=1:numVar
+        for j=1:params.sampleSize
             s(l,j) = rand() * (vars(l).Range(2) - vars(l).Range(1)) ...
                             +  vars(l).Range(1);
         end
     end
     % Determine next evaluation point using GP and an acquisition function
-    x_next = EI(x(:,params.numSeed + (i-1)),s,y(params.numSeed + (i-1)));
+    x_next = EI(x(:,1:(params.numSeed + (i-1))),s,y(1:(params.numSeed + (i-1))));
     % Get the next function value
     x_fun = struct();
     for j=1:numVar
@@ -69,6 +69,7 @@ end
 
 % Give back the results
 results.valueHistory = y;
+results.paramHistory = x;
 [y_max,id_max] = max(y);
 results.bestValue = y_max;
 for j=1:numVar

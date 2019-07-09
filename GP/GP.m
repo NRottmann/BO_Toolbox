@@ -64,9 +64,10 @@ sigma_n = params.noise;
 
 % Creating covariance matrices
 if isempty(params.CovParam)  % If no parameters are given take default values
-    [K] = Cov(x,x);
-    [K_s] = Cov(x,s);
-    [K_ss] = Cov(s,s);
+    covParam = covParamOptim(x,y,params.CovFunc);
+    [K] = Cov(x,x,'CovParam',covParam);
+    [K_s] = Cov(x,s,'CovParam',covParam);
+    [K_ss] = Cov(s,s,'CovParam',covParam);
 else
     [K] = Cov(x,x,'CovParam',params.CovParam);
     [K_s] = Cov(x,s,'CovParam',params.CovParam);
@@ -84,5 +85,26 @@ mu = (K_s')*alpha;
 beta = L \ K_s;
 sigma = K_ss - (beta')*beta;
 
+end
+
+% Log Likelihood Function, TODO: Write some documentation and put this in
+% own function
+function param = covParamOptim(x,y,CovFunc)
+% Optimize parameter for a defined CovFunc
+
+% define handle for covariance function
+Cov = str2func(CovFunc);
+
+% Get number of hyperparameters
+[~,paramTest] = Cov(x,x,'struct',true);
+nvar = length(paramTest);
+
+% use genetic algorithms
+param = ga(@logLikelihood,nvar);
+
+    function L = logLikelihood(param)
+        K = Cov(x,x,'CovParam',param);
+        L = (1/2) * y' * inv(K + 0.001*eye(length(K(:,1)))) * y + (1/2) * log(norm(K));
+    end
 end
 
