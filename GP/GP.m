@@ -36,7 +36,7 @@ function [mu,sigma] = GP(x,s,y,varargin)
 % Author: Nils Rottmann
 
 % Default values
-defaultargs = {'noise', 0.1, 'posDef', 0.1, 'CovFunc', 'se_kernel', 'CovParam', []}; 
+defaultargs = {'noise', 0.1, 'posDef', 0.1, 'CovFunc', 'se_kernel_var', 'CovParam', []}; 
 params = setargs(defaultargs, varargin);
 
 % error checking
@@ -99,8 +99,14 @@ Cov = str2func(CovFunc);
 [~,paramTest] = Cov(x,x,'struct',true);
 nvar = length(paramTest);
 
-% use genetic algorithms
-param = ga(@logLikelihood,nvar);
+% Use fminunc
+param_0 = ones(nvar,1);
+options = optimoptions(@fminunc,'Display','off');
+param = fminunc(@logLikelihood,param_0,options);
+
+% % use genetic algorithms
+% options = optimoptions(@ga,'Display','off');
+% param = ga(@logLikelihood,nvar,options);
 
     function L = logLikelihood(param)
         K = Cov(x,x,'CovParam',param);

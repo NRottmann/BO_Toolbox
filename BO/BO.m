@@ -34,6 +34,7 @@ numVar = length(vars);
 % Generate storage capacities
 x = zeros(numVar,params.maxIter + params.numSeed);
 y = zeros(params.maxIter + params.numSeed,1);
+y_max = zeros(params.maxIter + params.numSeed,1);
 
 % Start by generating numSeed seedpoints for the BO algorithm
 for i=1:params.numSeed
@@ -65,10 +66,12 @@ for i=1:params.maxIter
         x(j,params.numSeed + i) = x_next(j);
     end
     y(params.numSeed + i) = fun(x_fun);
+    y_max(params.numSeed + i) = max(y(1:(params.numSeed + i)));
 end
 
 % Give back the results
 results.valueHistory = y;
+results.maxValueHistory = y_max;
 results.paramHistory = x;
 [y_max,id_max] = max(y);
 results.bestValue = y_max;

@@ -49,7 +49,7 @@ end
 if iscell(params.CovParam)
     error('covariance parameters are in a cell array')
 end
-if size(params.CovParam) ~= [1+D 1] 
+if (length(params.CovParam) ~= (1+D))
     error('covariance parameters have not the right size')
 end
 

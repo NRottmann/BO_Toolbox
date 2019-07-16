@@ -25,8 +25,10 @@ function results = HIBO(fun,vars,varargin)
 % Author: Nils Rottmann
 
 % Default values
-defaultargs = {'maxIter', 30, 'numSeed', 3, 'sampleSize', 1000,'numFeature',1}; 
+defaultargs = {'maxIter', 30, 'numSeed', 3, 'sampleSize', 1000,'numFeature',1,'AcqFun', 'EI'}; 
 params = setargs(defaultargs, varargin);
+
+AcqFun = str2func(params.AcqFun);
 
 % Check params
 if params.numSeed < 2
@@ -40,6 +42,7 @@ numVar = length(vars);
 % Generate storage capacities
 x = zeros(numVar,params.maxIter + params.numSeed);
 y = zeros(params.maxIter + params.numSeed,1);
+y_max = zeros(params.maxIter + params.numSeed,1);
 
 % Start by generating numSeed seedpoints for the BO algorithm
 for i=1:params.numSeed
@@ -53,10 +56,16 @@ for i=1:params.numSeed
 end
 
 % We iterate over maxIter iterations
+T_History = cell(params.maxIter,1);
+f_history = zeros(params.numFeature,maxIter);
 for i=1:params.maxIter
     % Generate Features
-    T = linearCombination(x,y,params.numFeature);
+    % T = linearCombination(x,y,params.numFeature);
+    T = [1/sqrt(10), 1/sqrt(10), 1/sqrt(10), 1/sqrt(10), 1/sqrt(10), 1/sqrt(10), ...
+                                    1/sqrt(10), 1/sqrt(10), 1/sqrt(10), 1/sqrt(10)];
+    % T = [sqrt(2)/2, sqrt(2)/2];
     f = T * x;
+    T_History{i} = T;
     % Get the range for the learned features by combining them linearly
     rangeFeature = zeros(params.numFeature,2);
     for j=1:params.numFeature
@@ -74,7 +83,8 @@ for i=1:params.maxIter
         end
     end
     % Determine next feature evaluation point using GP and an acquisition function
-    x_next_f = EI(f(:,1:(params.numSeed + (i-1))),s_f,y(1:(params.numSeed + (i-1))));
+    x_next_f = AcqFun(f(:,1:(params.numSeed + (i-1))),s_f,y(1:(params.numSeed + (i-1))));
+    f_history(:,i) = x_next_f;
     
     % Generate uniformly distributed sample distribution for the parameters
     s = zeros(numVar,params.sampleSize);
@@ -88,8 +98,13 @@ for i=1:params.maxIter
     x_combined = [x; f];
     s_combined = [s; x_next_f*ones(1,params.sampleSize)];
     % Determine next evaluation point using GP and an acquisition function
-    x_combined_next = EI(x_combined(:,1:(params.numSeed + (i-1))),s_combined,y(1:(params.numSeed + (i-1))));
+    x_combined_next = AcqFun(x_combined(:,1:(params.numSeed + (i-1))),s_combined,y(1:(params.numSeed + (i-1))));
     x_next = x_combined_next(1:numVar,1);
+    
+    % TODO: Test, delete later
+    % x_next = EI_HIBO(x(:,1:(params.numSeed + (i-1))),s,y(1:(params.numSeed + (i-1))),T);
+    
+    
     % Get the next function value
     x_fun = struct();
     for j=1:numVar
@@ -97,10 +112,14 @@ for i=1:params.maxIter
         x(j,params.numSeed + i) = x_next(j);
     end
     y(params.numSeed + i) = fun(x_fun);
+    y_max(params.numSeed + i) = max(y(1:(params.numSeed + i)));
 end
 
 % Give back the results
+results.featureHistory = T_History;
+results.nextFeature = f_history;
 results.valueHistory = y;
+results.maxValueHistory = y_max;
 [y_max,id_max] = max(y);
 results.bestValue = y_max;
 for j=1:numVar
@@ -137,7 +156,8 @@ for i=1:N
 end
 
 % use genetic algorithms
-param = ga(@summedDifference,numFeature*numVar);
+options = optimoptions(@ga,'Display','off');
+param = ga(@summedDifference,numFeature*numVar,options);
 
 % Generate Transformation Matrix
 T = zeros(numFeature,numVar);
