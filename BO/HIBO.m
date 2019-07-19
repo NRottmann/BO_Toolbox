@@ -25,7 +25,7 @@ function results = HIBO(fun,vars,varargin)
 % Author: Nils Rottmann
 
 % Default values
-defaultargs = {'maxIter', 30, 'numSeed', 3, 'sampleSize', 1000,'numFeature',1,'AcqFun', 'EI'}; 
+defaultargs = {'maxIter', 30, 'numSeed', 3, 'seedPoints', [], 'sampleSize', 1000,'numFeature',1,'AcqFun', 'EI'}; 
 params = setargs(defaultargs, varargin);
 
 AcqFun = str2func(params.AcqFun);
@@ -47,12 +47,23 @@ y_max = zeros(params.maxIter + params.numSeed,1);
 % Start by generating numSeed seedpoints for the BO algorithm
 for i=1:params.numSeed
     x_fun = struct();
-    for j=1:numVar
-        x_fun.(vars(j).Name) = rand() * (vars(j).Range(2) - vars(j).Range(1)) ...
+    if isempty(params.seedPoints)
+        for j=1:numVar
+            x_fun.(vars(j).Name) = rand() * (vars(j).Range(2) - vars(j).Range(1)) ...
                             +  vars(j).Range(1);
-        x(j,i) = x_fun.(vars(j).Name);
+            x(j,i) = x_fun.(vars(j).Name);
+        end
+    else
+        if length(params.seedPoints(1,:)) ~= params.numSeed || length(params.seedPoints(:,1)) ~= numVar
+            error('Seed Points have wrong size!')
+        end
+        for j=1:numVar
+            x_fun.(vars(j).Name) = x(j,i);
+            x(j,i) = x_fun.(vars(j).Name);
+        end
     end
     y(i) = fun(x_fun);
+    y_max(i) = max(y);
 end
 
 % We iterate over maxIter iterations
@@ -61,11 +72,12 @@ f_history = zeros(params.numFeature,maxIter);
 for i=1:params.maxIter
     % Generate Features
     % T = linearCombination(x,y,params.numFeature);
+    
     T = [1/sqrt(10), 1/sqrt(10), 1/sqrt(10), 1/sqrt(10), 1/sqrt(10), 1/sqrt(10), ...
-                                    1/sqrt(10), 1/sqrt(10), 1/sqrt(10), 1/sqrt(10)];
-    % T = [sqrt(2)/2, sqrt(2)/2];
+                                    1/sqrt(10), 1/sqrt(10), 1/sqrt(10), 1/sqrt(10)];                          
     f = T * x;
     T_History{i} = T;
+    
     % Get the range for the learned features by combining them linearly
     rangeFeature = zeros(params.numFeature,2);
     for j=1:params.numFeature
@@ -100,6 +112,8 @@ for i=1:params.maxIter
     % Determine next evaluation point using GP and an acquisition function
     x_combined_next = AcqFun(x_combined(:,1:(params.numSeed + (i-1))),s_combined,y(1:(params.numSeed + (i-1))));
     x_next = x_combined_next(1:numVar,1);
+
+    % x_next = T' * x_next_f;
     
     % TODO: Test, delete later
     % x_next = EI_HIBO(x(:,1:(params.numSeed + (i-1))),s,y(1:(params.numSeed + (i-1))),T);
