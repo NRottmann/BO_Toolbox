@@ -1,4 +1,4 @@
-function results = HIBO(fun,vars,varargin)
+function results = HIBO_opt(fun,vars,varargin)
 % Bayesian Optimization
 %
 % Syntax:
@@ -100,21 +100,21 @@ for i=1:params.maxIter
     f_history(:,i) = x_next_f;
     
     % Generate uniformly distributed sample distribution for the parameters
-    s = zeros(numVar,params.sampleSize);
-    for l=1:numVar
-        for j=1:params.sampleSize
-            s(l,j) = rand() * (vars(l).Range(2) - vars(l).Range(1)) ...
-                            +  vars(l).Range(1);
-        end
-    end
-    % Put both together, to make them dependent
-    x_combined = [x; f];
-    s_combined = [s; x_next_f*ones(1,params.sampleSize)];
-    % Determine next evaluation point using GP and an acquisition function
-    x_combined_next = AcqFun(x_combined(:,1:(params.numSeed + (i-1))),s_combined,y(1:(params.numSeed + (i-1))));
-    x_next = x_combined_next(1:numVar,1);
+%     s = zeros(numVar,params.sampleSize);
+%     for l=1:numVar
+%         for j=1:params.sampleSize
+%             s(l,j) = rand() * (vars(l).Range(2) - vars(l).Range(1)) ...
+%                             +  vars(l).Range(1);
+%         end
+%     end
+%     % Put both together, to make them dependent
+%     x_combined = [x; f];
+%     s_combined = [s; x_next_f*ones(1,params.sampleSize)];
+%     % Determine next evaluation point using GP and an acquisition function
+%     x_combined_next = AcqFun(x_combined(:,1:(params.numSeed + (i-1))),s_combined,y(1:(params.numSeed + (i-1))));
+%     x_next = x_combined_next(1:numVar,1);
 
-    % x_next = T' * x_next_f;
+    x_next = T' * x_next_f;
     
     % TODO: Test, delete later
     % x_next = EI_HIBO(x(:,1:(params.numSeed + (i-1))),s,y(1:(params.numSeed + (i-1))),T);
