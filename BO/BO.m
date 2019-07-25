@@ -69,6 +69,7 @@ for i=1:params.maxIter
                             +  vars(l).Range(1);
         end
     end
+    
     % Determine next evaluation point using GP and an acquisition function
     x_next = AcqFun(x(:,1:(params.numSeed + (i-1))),s,y(1:(params.numSeed + (i-1))));
     % Get the next function value
