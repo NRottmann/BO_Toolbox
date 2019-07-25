@@ -1,4 +1,5 @@
 function initToolbox()
+warning('off', 'all')
 % Function to add allfolders to the matlab path
 paths = genpath ( pwd );
 exclude = {'.','..','.git'};
