@@ -30,10 +30,11 @@ function results = REMBO(fun,vars,varargin)
 % Author: Michael Werner
 
 % Default values
-defaultargs = {'maxIter', 30, 'numSeed', 3, 'sampleSize', 1000,...
+defaultargs = {'maxIter', 30, 'numSeed', 3, 'seedPoints', [], 'sampleSize', 1000,...
     'numFeatures', 1, 'AcqFun', 'EI'}; 
 params = setargs(defaultargs, varargin);
 AcqFun = str2func(params.AcqFun);
+
 % Get number of variables in input space
 numVar = length(vars);
 numFeature = params.numFeatures;
@@ -47,6 +48,7 @@ A = rand(numVar, numFeature);
 % Generate storage capacities
 x = zeros(numFeature,params.maxIter + params.numSeed);
 y = zeros(params.maxIter + params.numSeed,1);
+y_max = zeros(params.maxIter + params.numSeed,1);
 
 % Start by generating numSeed seedpoints for the BO algorithm
 for i=1:numSeed
@@ -62,6 +64,7 @@ for i=1:numSeed
     end
     
     y(i) = fun(x_fun);
+    y_max(i) = max(y(1:i));
 end
 
 % We iterate over maxIter iterations
@@ -87,10 +90,13 @@ for i=1:params.maxIter
         x_fun.(vars(j).Name) = x_next(j);        
     end
     y(params.numSeed + i) = fun(x_fun);
+    y_max(params.numSeed + i) = max(y(1:(params.numSeed + i)));
 end
 
 % Give back the results
 results.valueHistory = y;
+results.maxValueHistory = y_max;
+results.paramHistory = x;
 [y_max,id_max] = max(y);
 results.bestValue = y_max;
 f_best = x(:, id_max);

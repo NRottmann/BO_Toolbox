@@ -31,7 +31,7 @@ function results = DropoutBO(fun,vars,varargin)
 % Author: Michael Werner
 
 % Default values
-defaultargs = {'maxIter', 30, 'numSeed', 3, 'sampleSize', 1000, 'AcqFun', 'EI', 'PRandom', 0, 'd' 2}; 
+defaultargs = {'maxIter', 30, 'numSeed', 3, 'seedPoints', [], 'sampleSize', 1000, 'AcqFun', 'EI', 'PRandom', 0, 'd' 2}; 
 params = setargs(defaultargs, varargin);
 AcqFun = str2func(params.AcqFun);
 PRandom = min(max(params.PRandom, 0), 1);
@@ -43,16 +43,28 @@ numVar = length(vars);
 % Generate storage capacities
 x = zeros(numVar,params.maxIter + params.numSeed);
 y = zeros(params.maxIter + params.numSeed,1);
+y_max = zeros(params.maxIter + params.numSeed,1);
 
 % Start by generating numSeed seedpoints for the BO algorithm
 for i=1:numSeed
     x_fun = struct();
-    for j=1:numVar
-        x_fun.(vars(j).Name) = rand() * (vars(j).Range(2) - vars(j).Range(1)) ...
-                            +  vars(j).Range(1);
-        x(j,i) = x_fun.(vars(j).Name);
+    if isempty(params.seedPoints)
+        for j=1:numVar
+            x_fun.(vars(j).Name) = rand() * (vars(j).Range(2) - vars(j).Range(1)) ...
+                                +  vars(j).Range(1);
+            x(j,i) = x_fun.(vars(j).Name);
+        end
+    else
+        if length(params.seedPoints(1,:)) ~= params.numSeed || length(params.seedPoints(:,1)) ~= numVar
+            error('Seed Points have wrong size!')
+        end
+        for j=1:numVar
+            x_fun.(vars(j).Name) = params.seedPoints(j,i);
+            x(j,i) = x_fun.(vars(j).Name);
+        end
     end
     y(i) = fun(x_fun);
+    y_max(i) = max(y(1:i));
 end
 
 % We iterate over maxIter iterations
@@ -93,10 +105,13 @@ for i=1:params.maxIter
     end
     % Get the next function value
     y(params.numSeed + i) = fun(x_fun);
+    y_max(params.numSeed + i) = max(y(1:(params.numSeed + i)));
 end
 
 % Give back the results
 results.valueHistory = y;
+results.maxValueHistory = y_max;
+results.paramHistory = x;
 [y_max,id_max] = max(y);
 results.bestValue = y_max;
 for j=1:numVar

@@ -69,7 +69,7 @@ for i=1:numSeed
         end
     end
     y(i) = fun(x_fun);
-    y_max(i) = max(y);
+    y_max(i) = max(y(1:i));
 end
 
 % We iterate over maxIter iterations

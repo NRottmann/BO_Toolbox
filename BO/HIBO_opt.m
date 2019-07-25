@@ -58,12 +58,12 @@ for i=1:params.numSeed
             error('Seed Points have wrong size!')
         end
         for j=1:numVar
-            x_fun.(vars(j).Name) = x(j,i);
+            x_fun.(vars(j).Name) = params.seedPoints(j,i);
             x(j,i) = x_fun.(vars(j).Name);
         end
     end
     y(i) = fun(x_fun);
-    y_max(i) = max(y);
+    y_max(i) = max(y(1:i));
 end
 
 % We iterate over maxIter iterations
