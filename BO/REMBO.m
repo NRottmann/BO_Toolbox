@@ -38,6 +38,13 @@ AcqFun = str2func(params.AcqFun);
 % Get number of variables in input space
 numVar = length(vars);
 numFeature = params.numFeatures;
+
+% extract bounds of input space
+range = reshape([vars(:).Range], 2, [] )';
+xmin = range(:, 1);
+xmax = range(:, 2);
+clear range
+
 % generate feature variables
 fvars = [];
 for i=1:numFeature
@@ -59,6 +66,8 @@ for i=1:numSeed
         x(j,i) = f.(fvars(j).Name);
     end
     x_f = A*cell2mat(struct2cell(f));
+    % project x_f into input space bounds if nessessary
+    x_f = min(max(x_f, xmin), xmax);
     for j=1:numVar
         x_fun.(vars(j).Name) = x_f(j);
     end
@@ -86,6 +95,8 @@ for i=1:params.maxIter
     % Get the next function value
     x_fun = struct();
     x_next = A*f_next;
+    % project x_next into input space bounds if nessessary
+    x_next = min(max(x_next, xmin), xmax);
     for j=1:numVar
         x_fun.(vars(j).Name) = x_next(j);        
     end
