@@ -34,10 +34,6 @@ classdef ProdSin
                             num2str(obj.d)));
             end
             p = sin(varargin(1)) * prod(sin(varargin));
-            
-            if obj.minimize
-                p = -p;
-            end
         end
     end
 end

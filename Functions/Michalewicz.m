@@ -34,15 +34,8 @@ classdef Michalewicz
                             ') does not match the number of dimension: ',...
                             num2str(obj.d)));
             end
-            
-            s = 0;
-            for i=1:obj.d
-               s = s - sin(varargin(i))*sin(i*varargin(i)^2/pi)^(2*obj.m); 
-            end
-            
-            if obj.minimize
-                s = -s;
-            end
+            i = 1:obj.d;
+            s = - sum(sin(varargin).* sin(i.*varargin.^2/pi)^(2*obj.m));
         end
     end
 end

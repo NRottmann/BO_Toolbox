@@ -15,9 +15,6 @@ classdef HoelderTable
         function z = call(obj,x, y)
             %CALL calculates the value of the HoelderTable function at x and y
             z = - abs(sin(x) * cos(y) * exp(abs(1-sqrt(x^2*y^2)/pi)));
-            if obj.minimize
-                z = -z;
-            end
         end
     end
 end

@@ -15,9 +15,6 @@ classdef Easom
         function z = call(obj,x, y)
             %CALL calculates the value of the Easom function at x and y
             z = -cos(x)*cos(y)*exp(-((x-pi)^2+(y-pi)^1));
-            if obj.minimize
-                z = -z;
-            end
         end
     end
 end

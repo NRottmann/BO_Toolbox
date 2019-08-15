@@ -26,6 +26,7 @@ function results = DropoutBO(fun,vars,varargin)
 %   numFeature - number of features (default: 1)
 %   PRandom - probability of using Dropout-Random mode (default: 0)
 %   CovFunc - the covariance/kernel function (default: 'se_kernel_var')
+%   minimize - set true to minimize a function (default: false)
 %
 % Output:
 %   results
@@ -44,7 +45,8 @@ function results = DropoutBO(fun,vars,varargin)
 % Default values
 defaultargs = {'maxIter', 30, 'numSeed', 3, 'seedPoints', [],...
                'sampleSize', 1000, 'AcqFun', 'EI', 'PRandom', 0,...
-               'numFeature' 2, 'CovFunc', 'se_kernel_var'}; 
+               'numFeature' 2, 'CovFunc', 'se_kernel_var',...
+               'minimize', false}; 
 params = setargs(defaultargs, varargin);
 AcqFun = str2func(params.AcqFun);
 PRandom = min(max(params.PRandom, 0), 1);
@@ -59,27 +61,9 @@ y = zeros(params.maxIter + params.numSeed,1);
 y_max = zeros(params.maxIter + params.numSeed,1);
 
 % Start by generating numSeed seedpoints for the BO algorithm
-for i=1:numSeed
-    x_fun = struct();
-    if isempty(params.seedPoints)
-        for j=1:numVar
-            x_fun.(vars(j).Name) = rand() * (vars(j).Range(2) - vars(j).Range(1)) ...
-                                +  vars(j).Range(1);
-            x(j,i) = x_fun.(vars(j).Name);
-        end
-    else
-        if length(params.seedPoints(1,:)) ~= params.numSeed ||...
-           length(params.seedPoints(:,1)) ~= numVar
-            error('Seed Points have wrong size!')
-        end
-        for j=1:numVar
-            x_fun.(vars(j).Name) = params.seedPoints(j,i);
-            x(j,i) = x_fun.(vars(j).Name);
-        end
-    end
-    y(i) = fun(x_fun);
-    y_max(i) = max(y(1:i));
-end
+[x, y, y_max] = generateSeedPoints(fun, x, y, y_max, vars,...
+                                   params.numSeed, params.seedPoints,...
+                                   params.minimize);
 
 % We iterate over maxIter iterations
 for i=1:params.maxIter
@@ -115,17 +99,25 @@ for i=1:params.maxIter
     end
     % Get the next function value
     y(params.numSeed + i) = fun(x_fun);
+    if params.minimize
+       y(params.numSeed + i) = -y(params.numSeed + i); 
+    end
     y_max(params.numSeed + i) = max(y(1:(params.numSeed + i)));
 end
 
 % Give back the results
-results.valueHistory = y;
-results.maxValueHistory = y_max;
+[ymax,id_max] = max(y);
+if params.minimize
+    results.valueHistory = -y;
+    results.maxValueHistory = -y_max;
+    results.bestValue = -ymax;
+else
+    results.valueHistory = y;
+    results.maxValueHistory = y_max;
+    results.bestValue = ymax;
+end
 results.paramHistory = x;
-[y_max,id_max] = max(y);
-results.bestValue = y_max;
 for j=1:numVar
     results.bestParams.(vars(j).Name) = x(j,id_max);
 end
-
 end

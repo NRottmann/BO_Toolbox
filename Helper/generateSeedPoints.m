@@ -1,4 +1,4 @@
-function [x, y, y_max] = generateSeedPoints(func, x, y, y_max, vars, numSeed, seedPoints)
+function [x, y, y_max] = generateSeedPoints(func, x, y, y_max, vars, numSeed, seedPoints, minimize)
 %GENERATESEEDPOINTS generate seed points and evalutes func the those points
 %
 % Syntax:
@@ -17,6 +17,7 @@ function [x, y, y_max] = generateSeedPoints(func, x, y, y_max, vars, numSeed, se
 %   vars - array of optimizableVariable
 %   numSeed - number of seed points
 %   seedPoints - given seed points, size: length(var) x numSeed
+%   minimize - set true if func has to minimize, else false
 %
 %
 % Output:
@@ -24,9 +25,8 @@ function [x, y, y_max] = generateSeedPoints(func, x, y, y_max, vars, numSeed, se
 %   y - storage for the function values
 %   y_max - maximum over all evaluated function values
 %
-% Date: 01. July, 2019
-% Author: Nils Rottmann
-
+% Date: 12.8.2019
+% Author: Michael Werner
 
 numVar = length(vars);
 % create numSeed seed points and evaluate objective function at those points
@@ -50,6 +50,9 @@ for i=1:numSeed
         end
     end
     y(i) = func(x_fun);
+    if minimize
+       y(i) = -y(i); 
+    end
     y_max(i) = max(y(1:i));
 end
 end

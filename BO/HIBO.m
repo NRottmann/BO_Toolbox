@@ -29,6 +29,7 @@ function results = HIBO(fun,vars,varargin)
 %   FeatureGenerator - defines how the feautre is created 
 %                      (default: 'NeuralNet')
 %   CovFunc - the covariance/kernel function (default: 'se_kernel_var')
+%   minimize - set true to minimize a function (default: false)
 %
 % Output:
 %   results
@@ -50,7 +51,8 @@ function results = HIBO(fun,vars,varargin)
 % Default values
 defaultargs = {'maxIter', 30, 'numSeed', 3, 'seedPoints', [],...
                'sampleSize', 1000, 'AcqFun', 'EI', 'numFeature', 2,...
-               'FeatureGenerator', 'NeuralNet', 'CovFunc', 'se_kernel_var'}; 
+               'FeatureGenerator', 'NeuralNet',...
+               'CovFunc', 'se_kernel_var', 'minimize', false}; 
 params = setargs(defaultargs, varargin);
 
 % Check params
@@ -75,7 +77,8 @@ y_max = zeros(params.maxIter + params.numSeed,1);
 
 % Start by generating numSeed seedpoints for the BO algorithm
 [x, y, y_max] = generateSeedPoints(fun, x, y, y_max, vars,...
-                                   params.numSeed, params.seedPoints);
+                                   params.numSeed, params.seedPoints,...
+                                   params.minimize);
 
 % We iterate over maxIter iterations
 f_history = zeros(params.numFeature,maxIter);
@@ -116,15 +119,24 @@ for i=1:params.maxIter
         x(j,params.numSeed + i) = x_next(j);
     end
     y(params.numSeed + i) = fun(x_fun);
+    if params.minimize
+       y(params.numSeed + i) = -y(params.numSeed + i); 
+    end
     y_max(params.numSeed + i) = max(y(1:(params.numSeed + i)));
 end
 
 % Give back the results
+[ymax,id_max] = max(y);
+if params.minimize
+    results.valueHistory = -y;
+    results.maxValueHistory = -y_max;
+    results.bestValue = -ymax;
+else
+    results.valueHistory = y;
+    results.maxValueHistory = y_max;
+    results.bestValue = ymax;
+end
 results.nextFeature = f_history;
-results.valueHistory = y;
-results.maxValueHistory = y_max;
-[y_max,id_max] = max(y);
-results.bestValue = y_max;
 for j=1:numVar
     results.bestParams.(vars(j).Name) = x(j,id_max);
 end

@@ -27,6 +27,7 @@ function results = REMBO(fun,vars,varargin)
 %   (default: 'EI')
 %   CovFunc - the covariance/kernel function (default: 'se_kernel_var')
 %   numFeature - number of features (default: 2)
+%   minimize - set true to minimize a function (default: false)
 %
 % Output:
 %   results
@@ -47,7 +48,8 @@ function results = REMBO(fun,vars,varargin)
 % Default values
 defaultargs = {'maxIter', 30, 'numSeed', 3, 'seedPoints', [],...
                'sampleSize', 1000, 'AcqFun', 'EI',...
-               'CovFunc', 'se_kernel_var', 'numFeatures', 2}; 
+               'CovFunc', 'se_kernel_var', 'numFeatures', 2,...
+               'minimize', false}; 
 params = setargs(defaultargs, varargin);
 AcqFun = str2func(params.AcqFun);
 
@@ -92,6 +94,9 @@ for i=1:numSeed
     end
     
     y(i) = fun(x_fun);
+    if params.minimize
+       y(i) = -y(i); 
+    end
     y_max(i) = max(y(1:i));
 end
 
@@ -121,16 +126,25 @@ for i=1:params.maxIter
     end
     
     y(params.numSeed + i) = fun(x_fun);
+    if params.minimize
+       y(params.numSeed + i) = -y(params.numSeed + i); 
+    end
     y_max(params.numSeed + i) = max(y(1:(params.numSeed + i)));
 end
 
 % Give back the results
-results.valueHistory = y;
-results.maxValueHistory = y_max;
+[ymax,id_max] = max(y);
+if params.minimize
+    results.valueHistory = -y;
+    results.maxValueHistory = -y_max;
+    results.bestValue = -ymax;
+else
+    results.valueHistory = y;
+    results.maxValueHistory = y_max;
+    results.bestValue = ymax;
+end
 results.nextFeature = f;
 results.paramHistory = x;
-[y_max,id_max] = max(y);
-results.bestValue = y_max;
 f_best = x(:, id_max);
 for j=1:numFeature
     results.bestFeatures.(fvars(j).Name) = f_best(j);
@@ -141,7 +155,3 @@ for j=1:numVar
 end
 results.A = A;
 end
-
-
-
-
