@@ -18,7 +18,7 @@ classdef Branin
     
     methods
         function obj = Branin()
-            
+           % 
         end
         
         function z = call(obj,x, y)

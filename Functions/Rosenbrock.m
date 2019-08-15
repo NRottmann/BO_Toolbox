@@ -15,10 +15,11 @@ classdef Rosenbrock
     end
     
     methods
-        function obj = Rosenbrock()
-            num_vars = obj.d;
+        function obj = Rosenbrock(d)
+            obj.d = d;
+            obj.num_vars = d;
             vars = [];
-            for i=1:num_vars
+            for i=1:d
                vars = [vars, optimizableVariable(strcat('x', num2str(i)),...
                                                  [-Inf,Inf])];
             end

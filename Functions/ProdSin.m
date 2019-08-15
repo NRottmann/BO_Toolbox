@@ -15,10 +15,11 @@ classdef ProdSin
     end
     
     methods
-        function obj = ProdSin()
-            num_vars = obj.d;
+        function obj = ProdSin(d)
+            obj.d = d;
+            obj.num_vars = d;
             vars = [];
-            for i=1:num_vars
+            for i=1:d
                vars = [vars, optimizableVariable(strcat('x', num2str(i)),...
                                                  [0,2*pi])];
             end

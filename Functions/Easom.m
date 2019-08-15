@@ -9,7 +9,7 @@ classdef Easom
     
     methods
         function obj = Easom()
-            
+            %
         end
         
         function z = call(obj,x, y)

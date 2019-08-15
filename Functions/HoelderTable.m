@@ -9,7 +9,7 @@ classdef HoelderTable
     
     methods
         function obj = HoelderTable()
-            
+            %
         end
         
         function z = call(obj,x, y)

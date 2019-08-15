@@ -15,10 +15,11 @@ classdef Schwefel
     end
     
     methods
-        function obj = Schwefel()
-            num_vars = obj.d;
+        function obj = Schwefel(d)
+            obj.d = d;
+            obj.num_vars = d;
             vars = [];
-            for i=1:num_vars
+            for i=1:d
                vars = [vars, optimizableVariable(strcat('x', num2str(i)),...
                                                  [-500,500])];
             end
