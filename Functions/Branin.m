@@ -13,6 +13,7 @@ classdef Branin
     properties
         num_vars = 2;
         vars = [optimizableVariable('x',[-5,10]), optimizableVariable('y',[0,15])];
+        minimize = true;
     end
     
     methods
@@ -23,7 +24,9 @@ classdef Branin
         function z = call(obj,x, y)
             %CALL calculates the value of the branin function at x and y
             z = (y-(5.1/4*pi^2)+x^2 + 5/pi*x -6)^2 + 10*(1-1/8*pi)*cos(x) + 10;
-            z = -1 * z;
+            if obj.minimize
+                z = -z;
+            end
         end
     end
 end
