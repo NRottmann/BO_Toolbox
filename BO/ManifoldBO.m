@@ -19,20 +19,35 @@ function results = ManifoldBO(fun,vars,varargin)
 %   vars:   variables as optimizableVariable, e.g [x,y,...] 
 %
 % Propertyname/-value pairs:
+%   maxIter - number of interations performed by BO (default: 30)
+%   numSeed - number of points initialy evaluated (default: 3)
+%   seedPoints - given seed Points of size (n x numSeed) with n as the
+%                number of variables (default: [])
+%   sampleSize - number of samples from the acquisition function 
+%                (default: 1000)
 %   AcqFun - name of the acquisition function (string) which should be used
-%   (default: )
-    % TODO parameters
+%            (default: 'EI')
+%   num_hidden - number of hidden units in neral net (default 20)
+%   numFeature - number of features (default: 2)
+%   CovFunc - the covariance/kernel function (default: 'se_kernel_var')
 %
 % Output:
 %   results
+%      results.valueHistory - values received from function evaluation
+%      results.maxValueHistory - for each iteration the best function value
+%                                so far
+%      results.paramHistory - all parameters used for evaluation
+%      results.bestValue - best seen function value
+%      results.bestParams - parameters for the best function value
 %
-% used subfunction: setargs
+% used subfunction: setargs, generateSeedPoints, sampleFromRange
 %
-% Date: 24. July, 2019
-% Author: Franz Johannes Michael Werner
+% Date: 15.8.2019
+% Author: Michael Werner
 
-defaultargs = {'maxIter', 30, 'numSeed', 3, 'seedPoints', [], 'sampleSize', 1000,...
-    'num_hidden', 20, 'feature_size', 2, 'AcqFun', 'EI', 'CovFunc', 'se_kernel_var'}; 
+defaultargs = {'maxIter', 30, 'numSeed', 3, 'seedPoints', [],...
+               'sampleSize', 1000, 'AcqFun', 'EI', 'num_hidden', 20,...
+               'numFeature', 2, 'CovFunc', 'se_kernel_var'}; 
 params = setargs(defaultargs, varargin);
 
 % Defining the call for the covariance function
@@ -40,7 +55,7 @@ Cov = str2func(params.CovFunc);
 AcqFun = str2func(params.AcqFun);
 
 % Create neural net
-architecture = [length(vars), params.num_hidden, params.feature_size]; 
+architecture = [length(vars), params.num_hidden, params.numFeature]; 
 
 % Get number of variables to optimize
 numVar = length(vars);
@@ -51,26 +66,8 @@ y = zeros(params.maxIter + params.numSeed,1);
 y_max = zeros(params.maxIter + params.numSeed,1);
 
 % Start by generating numSeed seedpoints for the BO algorithm
-for i=1:numSeed
-    x_fun = struct();
-    if isempty(params.seedPoints)       
-        for j=1:numVar
-            x_fun.(vars(j).Name) = rand() * (vars(j).Range(2) - vars(j).Range(1)) ...
-                                +  vars(j).Range(1);
-            x(j,i) = x_fun.(vars(j).Name);
-        end
-    else
-        if length(params.seedPoints(1,:)) ~= params.numSeed || length(params.seedPoints(:,1)) ~= numVar
-            error('Seed Points have wrong size!')
-        end
-        for j=1:numVar
-            x_fun.(vars(j).Name) = params.seedPoints(j,i);
-            x(j,i) = x_fun.(vars(j).Name);
-        end
-    end
-    y(i) = fun(x_fun);
-    y_max(i) = max(y(1:i));
-end
+[x, y, y_max] = generateSeedPoints(fun, x, y, y_max, vars,...
+                                   params.numSeed, params.seedPoints);
 
 % We iterate over maxIter iterations
 for i=1:params.maxIter
@@ -81,18 +78,14 @@ for i=1:params.maxIter
     [weights, covParam, mtgpParam] = optimize(x_i, y_i, architecture, Cov);
     
     % Generate uniformly distributed sample distribution
-    s = zeros(numVar,params.sampleSize);
-    for j=1:params.sampleSize
-        for l=1:numVar
-            s(l,j) = rand() * (vars(l).Range(2) - vars(l).Range(1)) ...
-                            +  vars(l).Range(1);
-        end
-    end
+    s = sampleFromRange(numVar, params.sampleSize, vars);
+    
     f_x = NeuralNet(x_i, weights, architecture);
     f_s = NeuralNet(s, weights, architecture);
 
     % Determine next evaluation point using GP and an acquisition function
-    f_x_next = AcqFun(f_x, f_s, y_i, 'CovParam', covParam);
+    f_x_next = AcqFun(f_x, f_s, y_i,...
+                      'CovFunc', params.CovFunc, 'CovParam', covParam);
     
     % map feature into input space
     [x_next, ~] = MTGPWrapper(f_x, f_x_next, x_i, mtgpParam);  
@@ -127,23 +120,19 @@ function [netParam, covParam, mtgpParam] = optimize(x,y, architecture, Cov)
     [~,paramTest] = Cov(f_x,f_x,'struct',true);
     nvarCov = length(paramTest);
     
-    nvar = nvarCov + nvarNet;
-
-    % Use fminunc
-    param_0 = 0.1*ones(nvar,1);
-    options = optimoptions(@fminunc,'Display','off');
-    param = fminunc(@logLikelihood,param_0,options);
+    % start optimizaiton
+    params = optimizeParameter(@logLikelihood, [nvarCov, nvarNet]);
         function L = logLikelihood(param)
-            covParam = param(1: nvarCov);
-            weights = param(nvarCov + 1: end);
-            f_x = NeuralNet(x, weights', architecture);
+            covParam = cell2mat(param(1));
+            weights = cell2mat(param(2))';
+            f_x = NeuralNet(x, weights, architecture);
             K = Cov(f_x,f_x,'CovParam',covParam);
             L = (1/2) * y' * inv(K + 0.001*eye(length(K(:,1)))) * y + (1/2) * log(norm(K));
         end
     
     % extract parameters
-    covParam = param(1:nvarCov);
-    netParam = (param(nvarCov+1 : end))';  
+    covParam = cell2mat(params(1));
+    netParam = cell2mat(params(2))';
     
     % get parameters for MTGP
     f_x = NeuralNet(x, netParam, architecture);
@@ -154,7 +143,7 @@ function [f] = NeuralNet(x, weights, architecture, varargin)
 % Neual Net
 %
 % Syntax:
-%   results = ManifoldBO(x, weights, architecture, varargin);
+%   results = NeuralNet(x, weights, architecture, varargin);
 %   
 % Description:
 %   Implements the forward propagation of a Neural Net

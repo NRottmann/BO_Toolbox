@@ -17,21 +17,37 @@ function results = REMBO(fun,vars,varargin)
 %   vars:   variables as optimizableVariable, e.g [x,y,...] 
 %
 % Propertyname/-value pairs:
+%   maxIter - number of interations performed by BO (default: 30)
+%   numSeed - number of points initialy evaluated (default: 3)
+%   seedPoints - given seed Points of size (n x numSeed) with n as the
+%                number of variables (default: [])
+%   sampleSize - number of samples from the acquisition function 
+%                (default: 1000)
 %   AcqFun - name of the acquisition function (string) which should be used
-%   (default: EI)
-%   numFeatures - number of dimensions in feature space
+%   (default: 'EI')
+%   CovFunc - the covariance/kernel function (default: 'se_kernel_var')
+%   numFeature - number of features (default: 2)
 %
 % Output:
 %   results
+%      results.valueHistory - values received from function evaluation
+%      results.maxValueHistory - for each iteration the best function value
+%                                so far
+%      results.paramHistory - all parameters used for evaluation
+%      results.nextFeature - for each iteration the created feature
+%      results.bestValue - best seen function value
+%      results.bestParams - parameters for the best function value
+%      results.A - Matrix A which projects from feature into input space
 %
-% used subfunction: setargs
+% used subfunction: setargs, generateSeedPoints, sampleFromRange
 %
-% Date: 08. July, 2019
+% Date: 15.8.2019
 % Author: Michael Werner
 
 % Default values
-defaultargs = {'maxIter', 30, 'numSeed', 3, 'seedPoints', [], 'sampleSize', 1000,...
-    'numFeatures', 1, 'AcqFun', 'EI'}; 
+defaultargs = {'maxIter', 30, 'numSeed', 3, 'seedPoints', [],...
+               'sampleSize', 1000, 'AcqFun', 'EI',...
+               'CovFunc', 'se_kernel_var', 'numFeatures', 2}; 
 params = setargs(defaultargs, varargin);
 AcqFun = str2func(params.AcqFun);
 
@@ -49,27 +65,30 @@ clear range
 fvars = [];
 for i=1:numFeature
     fvars = [fvars, optimizableVariable(strcat("f", num2str(i)),...
-        [-sqrt(numFeature), sqrt(numFeature)])];
+                                        [-sqrt(numFeature),...
+                                        sqrt(numFeature)])];
 end
 A = rand(numVar, numFeature);
 % Generate storage capacities
-x = zeros(numFeature,params.maxIter + params.numSeed);
+x = zeros(numVar,params.maxIter + params.numSeed);
+f = zeros(numFeature,params.maxIter + params.numSeed);
 y = zeros(params.maxIter + params.numSeed,1);
 y_max = zeros(params.maxIter + params.numSeed,1);
 
 % Start by generating numSeed seedpoints for the BO algorithm
 for i=1:numSeed
-    f = struct();
+    f_seed = struct();
     for j=1:numFeature
-        f.(fvars(j).Name) = rand() * (fvars(j).Range(2) - fvars(j).Range(1)) ...
+        f_seed.(fvars(j).Name) = rand() * (fvars(j).Range(2) - fvars(j).Range(1)) ...
                             +  fvars(j).Range(1);
-        x(j,i) = f.(fvars(j).Name);
+        f(j,i) = f_seed.(fvars(j).Name);
     end
-    x_f = A*cell2mat(struct2cell(f));
+    x_seed = A*cell2mat(struct2cell(f_seed));
     % project x_f into input space bounds if nessessary
-    x_f = min(max(x_f, xmin), xmax);
+    x_seed = min(max(x_seed, xmin), xmax);
+    x(:, i) = x_seed;
     for j=1:numVar
-        x_fun.(vars(j).Name) = x_f(j);
+        x_fun.(vars(j).Name) = x_seed(j);
     end
     
     y(i) = fun(x_fun);
@@ -79,27 +98,28 @@ end
 % We iterate over maxIter iterations
 for i=1:params.maxIter
     % Generate uniformly distributed sample distribution
-    s = zeros(numFeature,params.sampleSize);
-    for j=1:params.sampleSize
-        for l=1:numFeature
-            s(l,j) = rand() * (fvars(l).Range(2) - fvars(l).Range(1)) ...
-                            +  fvars(l).Range(1);
-        end
-    end
+    s = sampleFromRange(params.numFeature, params.sampleSize, fvars);
+        
     % Determine next evaluation point using GP and an acquisition function
-    f_next = AcqFun(x(:,params.numSeed + (i-1)),s,y(params.numSeed + (i-1)));
+    f_next = AcqFun(x(:,params.numSeed + (i-1)),s,...
+                    y(params.numSeed + (i-1)), 'CovFunc', params.CovFunc);
+    
     % Store feature
     for j=1:numFeature
-        x(j,params.numSeed + i) = f_next(j);
+        f(j,params.numSeed + i) = f_next(j);
     end
+    
     % Get the next function value
     x_fun = struct();
     x_next = A*f_next;
+    
     % project x_next into input space bounds if nessessary
     x_next = min(max(x_next, xmin), xmax);
+    x(:, params.numSeed + i) = x_next;
     for j=1:numVar
         x_fun.(vars(j).Name) = x_next(j);        
     end
+    
     y(params.numSeed + i) = fun(x_fun);
     y_max(params.numSeed + i) = max(y(1:(params.numSeed + i)));
 end
@@ -107,6 +127,7 @@ end
 % Give back the results
 results.valueHistory = y;
 results.maxValueHistory = y_max;
+results.nextFeature = f;
 results.paramHistory = x;
 [y_max,id_max] = max(y);
 results.bestValue = y_max;
@@ -118,7 +139,7 @@ x_best = A*f_best;
 for j=1:numVar
     results.bestParams.(vars(j).Name) = x_best(j);
 end
-
+results.A = A;
 end
 
 

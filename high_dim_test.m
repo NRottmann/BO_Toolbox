@@ -12,14 +12,13 @@ initToolbox
 D = 25;
 n = 1; % number if 
 
-x = optimizableVariable('x',[-5,10]);
-y = optimizableVariable('y',[0,15]);
-vars = [x,y];
-for i=3:D
+branin = Branin();
+vars = branin.vars;
+for i=length(branin.vars):D
    vars = [vars, optimizableVariable(strcat("var", num2str(i)),[0,15])];
 end
 
-fun = @(vars) -Branin(vars.x,vars.y);
+fun = @(vars) -branin.call(vars.x,vars.y);
 
 N = 200;
 

@@ -13,22 +13,40 @@ function results = BO(fun,vars,varargin)
 %   vars:   variables as optimizableVariable, e.g [x,y,...] 
 %
 % Propertyname/-value pairs:
+%   maxIter - number of interations performed by BO (default: 30)
+%   numSeed - number of points initialy evaluated (default: 3)
+%   seedPoints - given seed Points of size (n x numSeed) with n as the
+%                number of variables (default: [])
+%   sampleSize - number of samples from the acquisition function 
+%                (default: 1000)
 %   AcqFun - name of the acquisition function (string) which should be used
-%   (default: )
-%       seedPoints as numVar x numSeed
+%   (default: 'EI')
+%   CovFunc - the covariance/kernel function (default: 'se_kernel_var')
+%   numFeature - only added for compatibility. Not used !!
 %
 % Output:
 %   results
+%      results.valueHistory - values received from function evaluation
+%      results.maxValueHistory - for each iteration the best function value
+%                                so far
+%      results.paramHistory - all parameters used for evaluation
+%      results.bestValue - best seen function value
+%      results.bestParams - parameters for the best function value
 %
-% used subfunction: setargs
+% used subfunction: setargs, generateSeedPoints, sampleFromRange
 %
 % Date: 02. July, 2019
 % Author: Nils Rottmann
+% Date: 15.8.2019
+% Author: Michael Werner
 
 % Default values
-defaultargs = {'maxIter', 30, 'numSeed', 3, 'seedPoints', [], 'sampleSize', 1000, 'AcqFun', 'EI'}; 
+defaultargs = {'maxIter', 30, 'numSeed', 3, 'seedPoints', [],...
+               'sampleSize', 1000, 'AcqFun', 'EI',...
+               'CovFunc', 'se_kernel_var', 'numFeature', 0,}; 
 params = setargs(defaultargs, varargin);
 AcqFun = str2func(params.AcqFun);
+
 % Get number of variables to optimize
 numVar = length(vars);
 
@@ -38,40 +56,19 @@ y = zeros(params.maxIter + params.numSeed,1);
 y_max = zeros(params.maxIter + params.numSeed,1);
 
 % Start by generating numSeed seedpoints for the BO algorithm
-for i=1:params.numSeed
-    x_fun = struct();
-    if isempty(params.seedPoints)
-        for j=1:numVar
-            x_fun.(vars(j).Name) = rand() * (vars(j).Range(2) - vars(j).Range(1)) ...
-                            +  vars(j).Range(1);
-            x(j,i) = x_fun.(vars(j).Name);
-        end
-    else
-        if length(params.seedPoints(1,:)) ~= params.numSeed || length(params.seedPoints(:,1)) ~= numVar
-            error('Seed Points have wrong size!')
-        end
-        for j=1:numVar
-            x_fun.(vars(j).Name) = params.seedPoints(j,i);
-            x(j,i) = x_fun.(vars(j).Name);
-        end
-    end
-    y(i) = fun(x_fun);
-    y_max(i) = max(y(1:i));
-end
+[x, y, y_max] = generateSeedPoints(fun, x, y, y_max, vars,...
+                                   params.numSeed, params.seedPoints);
 
 % We iterate over maxIter iterations
 for i=1:params.maxIter
     % Generate uniformly distributed sample distribution
-    s = zeros(numVar,params.sampleSize);
-    for l=1:numVar
-        for j=1:params.sampleSize
-            s(l,j) = rand() * (vars(l).Range(2) - vars(l).Range(1)) ...
-                            +  vars(l).Range(1);
-        end
-    end
-    
+    s = sampleFromRange(numVar, params.sampleSize, vars);
+       
     % Determine next evaluation point using GP and an acquisition function
-    x_next = AcqFun(x(:,1:(params.numSeed + (i-1))),s,y(1:(params.numSeed + (i-1))));
+    x_next = AcqFun(x(:,1:(params.numSeed + (i-1))),s,...
+                    y(1:(params.numSeed + (i-1))),...
+                    'CovFunc', params.CovFunc);
+    
     % Get the next function value
     x_fun = struct();
     for j=1:numVar
