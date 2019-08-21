@@ -50,7 +50,7 @@ defaultargs = {'maxIter', 30, 'numSeed', 3, 'seedPoints', [],...
 params = setargs(defaultargs, varargin);
 AcqFun = str2func(params.AcqFun);
 PRandom = min(max(params.PRandom, 0), 1);
-d = params.d;
+d = params.numFeature;
 
 % Get number of variables to optimize
 numVar = length(vars);
