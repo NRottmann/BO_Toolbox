@@ -159,7 +159,8 @@ params = optimizeParameter(@logLikelihood, [nvarCov, f_gen.num_param]);
         f_x = f_gen.getfeature(x, f_gen_param);
         % compute logLikelihood for prediction in feature space
         K = Cov(f_x,f_x,'CovParam',covParam);
-        L = (1/2) * y' * inv(K + 0.001*eye(length(K(:,1)))) * y + (1/2) * log(norm(K));
+        L = (1/2) * (y'/(K + 0.01*eye(length(K(:,1))))) * y...
+            + (1/2) * log(norm(K));
     end
 
 % extract parameters
