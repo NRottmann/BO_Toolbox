@@ -8,6 +8,8 @@ classdef Branin
 % Design Optimization with Kriging Approximations. PhD thesis, University of Michigan,
 % 2002.
 %
+% https://www.sfu.ca/~ssurjano/branin.html
+%
 % Date: 09.08.2019
 % Author: Michael Werner   
     properties

@@ -1,6 +1,6 @@
 classdef Schwefel
 % The additive Schwefel benchmark function
-%
+% https://www.sfu.ca/~ssurjano/schwef.html
 % Date: 15.08.2019
 % Author: Michael Werner   
 
@@ -34,7 +34,8 @@ classdef Schwefel
                             ') does not match the number of dimension: ',...
                             num2str(obj.d)));
             end
-            s = 418.9829*obj.d - sum(varargin.*sin(sqrt(abs(varargin))));
+            x = cell2mat(varargin);
+            s = 418.9829*obj.d - sum(x.*sin(sqrt(abs(x))));
         end
     end
 end

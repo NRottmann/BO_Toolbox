@@ -1,6 +1,6 @@
 classdef Michalewicz
 % The additive Michalewicz benchmark function
-%
+% https://www.sfu.ca/~ssurjano/michal.html
 % Date: 15.08.2019
 % Author: Michael Werner   
 
@@ -35,8 +35,9 @@ classdef Michalewicz
                             ') does not match the number of dimension: ',...
                             num2str(obj.d)));
             end
+            x = cell2mat(varargin);
             i = 1:obj.d;
-            s = - sum(sin(varargin).* sin(i.*varargin.^2/pi)^(2*obj.m));
+            s = - sum(sin(x).* sin(i.*x.^2/pi).^(2*obj.m));
         end
     end
 end
