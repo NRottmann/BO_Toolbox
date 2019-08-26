@@ -7,7 +7,15 @@ function params = optimizeParameter(func, num_param)
 
     % Use fminunc
     param_0 = 0.1*ones(nvar,1);
-    options = optimoptions(@fminunc,'Display','off');
+    
+    % limit the number of function evaluation
+    if nvar <= 100
+        max_eval = 100*nvar;
+    else
+        max_eval = 50*nvar;
+    end
+    options = optimoptions(@fminunc,'Display','off',...
+                           'MaxFunctionEvaluations', max_eval);
     param = fminunc(@callback,param_0,options);
     
     function f = callback(param)
