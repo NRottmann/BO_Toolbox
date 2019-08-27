@@ -83,19 +83,20 @@ y_max = zeros(params.maxIter + params.numSeed,1);
 % We iterate over maxIter iterations
 f_history = zeros(params.numFeature,maxIter);
 for i=1:params.maxIter
+    x_iter = x(:, 1:(params.numSeed + (i-1)));
+    y_iter = y(1:(params.numSeed + (i-1)));
     % Optimize parameters for prediction in feature space
-     [covParam, f_genParam] = optimize(x, y, f_gen, Cov);
+    [covParam, f_genParam] = optimize(x_iter, y_iter, f_gen, Cov);
     
     % Generate Features
-    f = f_gen.getfeature(x, f_genParam);
+    f = f_gen.getfeature(x_iter, f_genParam);
     
     % Generate uniformly distributed sample distribution for the features
     s_f = sampleFromRange(params.numFeature, params.sampleSize,...
                           f_gen.getbounds());
         
     % Determine next feature evaluation point using GP and an acquisition function
-    x_next_f = AcqFun(f(:,1:(params.numSeed + (i-1))),  s_f,...
-                      y(1:(params.numSeed + (i-1))),...
+    x_next_f = AcqFun(f,  s_f, y_iter,...
                       'CovFunc', params.CovFunc, 'CovParam', covParam);
     f_history(:,i) = x_next_f;
     
@@ -103,7 +104,7 @@ for i=1:params.maxIter
     s = sampleFromRange(numVar, params.sampleSize, vars);
         
     % Put both together, to make them dependent
-    x_combined = [x; f];
+    x_combined = [x_iter; f];
     s_combined = [s; x_next_f*ones(1,params.sampleSize)];
     
     % Determine next evaluation point using GP and an acquisition function
