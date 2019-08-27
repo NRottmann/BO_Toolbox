@@ -34,7 +34,8 @@ classdef ProdSin
                             ') does not match the number of dimension: ',...
                             num2str(obj.d)));
             end
-            p = sin(varargin(1)) * prod(sin(varargin));
+            x = cell2mat(varargin);
+            p = sin(x(1)) * prod(sin(x));
         end
     end
 end

@@ -1,6 +1,6 @@
 classdef Rosenbrock
 % The additive Rosenbrock benchmark function
-%
+% https://www.sfu.ca/~ssurjano/rosen.html
 % Date: 15.08.2019
 % Author: Michael Werner   
 
@@ -21,7 +21,7 @@ classdef Rosenbrock
             vars = [];
             for i=1:d
                vars = [vars, optimizableVariable(strcat('x', num2str(i)),...
-                                                 [-Inf,Inf])];
+                                                 [-5,10])];
             end
             obj.vars = vars;
         end
@@ -34,8 +34,7 @@ classdef Rosenbrock
                             ') does not match the number of dimension: ',...
                             num2str(obj.d)));
             end
-            x = varargin;
-            s = 0;
+            x = cell2mat(varargin);
             x1 = x(1:end-1);
             x2 = x(2:end);
             s = sum(100*(x2-x1.^2).^2 + (1-x1).^2);
