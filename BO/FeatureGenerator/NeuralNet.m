@@ -47,7 +47,7 @@ classdef NeuralNet
             %   Detailed explanation goes here
             
             % Default values
-            defaultargs = {'num_hidden', 10}; 
+            defaultargs = {'num_hidden', 20}; 
             params = setargs(defaultargs, varargin);
             obj.architecture = [D, params.num_hidden, d];
             obj.num_param = obj.getnumweights();

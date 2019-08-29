@@ -66,7 +66,7 @@ clear range
 % generate feature variables
 fvars = [];
 for i=1:numFeature
-    fvars = [fvars, optimizableVariable(strcat("f", num2str(i)),...
+    fvars = [fvars, optimizableVariable(strcat('f', num2str(i)),...
                                         [-sqrt(numFeature),...
                                         sqrt(numFeature)])];
 end
@@ -103,10 +103,10 @@ end
 % We iterate over maxIter iterations
 for i=1:params.maxIter
     % Generate uniformly distributed sample distribution
-    s = sampleFromRange(params.numFeature, params.sampleSize, fvars);
+    s = sampleFromRange(numFeature, params.sampleSize, fvars);
         
     % Determine next evaluation point using GP and an acquisition function
-    f_next = AcqFun(x(:,params.numSeed + (i-1)),s,...
+    f_next = AcqFun(f(:,params.numSeed + (i-1)),s,...
                     y(params.numSeed + (i-1)), 'CovFunc', params.CovFunc);
     
     % Store feature
@@ -145,7 +145,7 @@ else
 end
 results.nextFeature = f;
 results.paramHistory = x;
-f_best = x(:, id_max);
+f_best = f(:, id_max);
 for j=1:numFeature
     results.bestFeatures.(fvars(j).Name) = f_best(j);
 end
