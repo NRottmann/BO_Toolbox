@@ -12,7 +12,7 @@ function params = optimizeParameter(func, num_param)
     if nvar <= 100
         max_eval = 100*nvar;
     else
-        max_eval = 50*nvar;
+        max_eval = 100*100;
     end
     options = optimoptions(@fminunc,'Display','off',...
                            'MaxFunctionEvaluations', max_eval);

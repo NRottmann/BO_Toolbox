@@ -1,4 +1,4 @@
-function [x_next, alpha] = UCB(x,s,y, varargin)
+function [x_next, alpha, idx] = UCB(x,s,y, varargin)
 % Acquisition Function for BO - Upper Confidence Bound
 % Syntax:
 %   results = UCB(x,s,y);
@@ -22,6 +22,7 @@ function [x_next, alpha] = UCB(x,s,y, varargin)
 % Output:
 %   x_next - point of s with highest UCB
 %   alpha - UCB values for all points in s
+%   idx - the index of x_next in s
 %
 % used subfunction: setargs
 %
@@ -40,6 +41,9 @@ a  = mu + kappa * sigma;
 x_next = s(:,ID);
 if nargout > 1
    alpha = a; 
+end
+if nargout > 2
+   idx = ID;
 end
 end
 
