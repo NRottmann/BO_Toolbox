@@ -1,4 +1,4 @@
-function results = REMBO(fun,vars,varargin)
+function [results] = REMBO(fun,vars,varargin)
 % Bayesian Optimization with Random Embedding
 %
 % Syntax:
@@ -80,10 +80,21 @@ y_max = zeros(params.maxIter + params.numSeed,1);
 % Start by generating numSeed seedpoints for the BO algorithm
 for i=1:numSeed
     f_seed = struct();
-    for j=1:numFeature
-        f_seed.(fvars(j).Name) = rand() * (fvars(j).Range(2) - fvars(j).Range(1)) ...
-                            +  fvars(j).Range(1);
-        f(j,i) = f_seed.(fvars(j).Name);
+    if isempty(params.seedPoints)
+        for j=1:numFeature
+            f_seed.(fvars(j).Name) = rand() * (fvars(j).Range(2) - fvars(j).Range(1)) ...
+                                +  fvars(j).Range(1);
+            f(j,i) = f_seed.(fvars(j).Name);
+        end
+    else
+        % if seed points are given, copy them
+        if length(params.seedPoints(1,:)) ~= numSeed || length(params.seedPoints(:,1)) ~= numFeature
+            error('Seed Points have wrong size!')
+        end
+        for j=1:numFeature
+            f_seed.(fvars(j).Name) = params.seedPoints(j,i);
+            f(j,i) = f_seed.(fvars(j).Name);
+        end
     end
     x_seed = A*cell2mat(struct2cell(f_seed));
     % project x_f into input space bounds if nessessary
