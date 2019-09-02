@@ -131,24 +131,26 @@ function [netParam, covParam, mtgpParam] = optimize(x,y, architecture, Cov)
     f_x = NeuralNet(x, rand(1,nvarNet), architecture);
     [~,paramTest] = Cov(f_x,f_x,'struct',true);
     nvarCov = length(paramTest);
+    [~, ~, mtgpParam, data] = MTGPWrapper(f_x, f_x, x, 'init');
+    nvarMTGP = length(mtgpParam);
+    
     
     % start optimizaiton
-    params = optimizeParameter(@logLikelihood, [nvarCov, nvarNet]);
+    params = optimizeParameter(@logLikelihood, [nvarCov, nvarNet, nvarMTGP]);
         function L = logLikelihood(param)
             covParam = cell2mat(param(1));
             weights = cell2mat(param(2))';
+            mtgpParam = cell2mat(param(3));
             f_x = NeuralNet(x, weights, architecture);
             K = Cov(f_x,f_x,'CovParam',covParam);
             L = (1/2) * y' * inv(K + 0.001*eye(length(K(:,1)))) * y + (1/2) * log(norm(K));
+            L = L + nmargl_mtgp_mod(mtgpParam, data{:});
         end
     
     % extract parameters
     covParam = cell2mat(params(1));
     netParam = cell2mat(params(2))';
-    
-    % get parameters for MTGP
-    f_x = NeuralNet(x, netParam, architecture);
-    [~, ~, mtgpParam] = MTGPWrapper(f_x, f_x, x, []);
+    mtgpParam = cell2mat(params(3));
 end
 
 function [f] = NeuralNet(x, weights, architecture, varargin)
