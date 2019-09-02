@@ -84,8 +84,8 @@ for i=1:params.maxIter
     for j=1:numVar
         if r<PRandom
             % Pick random value
-            x_fun.(vars(j).Name) = rand() * (vars(d_idx(l)).Range(2) - ...
-                vars(d_idx(l)).Range(1)) + vars(d_idx(l)).Range(1);
+            x_fun.(vars(j).Name) = rand() * (vars(j).Range(2) - ...
+                vars(j).Range(1)) + vars(j).Range(1);
         else
             % Take value from current best evaluation
             x_fun.(vars(j).Name) = x(j, id_max);
