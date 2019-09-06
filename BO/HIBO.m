@@ -67,7 +67,7 @@ numVar = length(vars);
 % extract functions
 Cov = str2func(params.CovFunc);
 AcqFun = str2func(params.AcqFun);
-f_gen = str2func(params.FeatureGenerator);
+f_gen = str2func(char(params.FeatureGenerator));
 f_gen = f_gen(numVar, params.numFeature, vars);
 
 % Generate storage capacities
