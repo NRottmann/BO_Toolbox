@@ -49,7 +49,7 @@ function results = ManifoldBO(fun,vars,varargin)
 defaultargs = {'maxIter', 30, 'numSeed', 3, 'seedPoints', [],...
                'sampleSize', 1000, 'AcqFun', 'EI', 'num_hidden', 20,...
                'numFeature', 2, 'CovFunc', 'se_kernel_var',...
-               'minimize', false}; 
+               'minimize', false, 'Checkpointfile', []}; 
 params = setargs(defaultargs, varargin);
 
 % Defining the call for the covariance function
@@ -62,10 +62,17 @@ architecture = [length(vars), params.num_hidden, params.numFeature];
 % Get number of variables to optimize
 numVar = length(vars);
 
-% Generate storage capacities
-x = zeros(numVar,params.maxIter + params.numSeed);
-y = zeros(params.maxIter + params.numSeed,1);
-y_max = zeros(params.maxIter + params.numSeed,1);
+if isempty(params.Checkpointfile) || ~isfile(params.Checkpointfile)
+    % Generate storage capacities
+    x = zeros(numVar,params.maxIter + params.numSeed);
+    y = zeros(params.maxIter + params.numSeed,1);
+    y_max = zeros(params.maxIter + params.numSeed,1);
+    i_start = 1;
+else
+   % restore
+   load(params.Checkpointfile, 'i', 'x', 'y', 'y_max')
+   i_start = i+1;
+end
 
 % Start by generating numSeed seedpoints for the BO algorithm
 [x, y, y_max] = generateSeedPoints(fun, x, y, y_max, vars,...
@@ -73,7 +80,9 @@ y_max = zeros(params.maxIter + params.numSeed,1);
                                    params.minimize);
 
 % We iterate over maxIter iterations
-for i=1:params.maxIter
+for i=i_start:params.maxIter
+    disp(i);
+    disp(fix(clock))
     x_i = x(:,1:params.numSeed + (i-1));
     y_i = y(1:params.numSeed + (i-1));
     
@@ -104,6 +113,9 @@ for i=1:params.maxIter
        y(params.numSeed + i) = -y(params.numSeed + i); 
     end
     y_max(params.numSeed + i) = max(y(1:(params.numSeed + i)));
+    if ~isempty(params.Checkpointfile)
+        save(params.Checkpointfile, 'i', 'x', 'y', 'y_max')
+    end
 end
 
 % Give back the results
