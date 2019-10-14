@@ -149,11 +149,12 @@ classdef Visualizer < handle
             % Drawing the user's mallet
             obj.table.mallet = fill(obj.x_mallet, obj.y_mallet,'k','parent',obj.table.container);
             hold on
-            obj.table.dot = fill(0 + obj.r_mallet/5 * cos(obj.draw_phi), 0 + obj.r_mallet/5 * sin(obj.draw_phi),'g','parent',obj.table.container);
-            hold on
-            obj.table.dotv = fill(0 + obj.r_mallet/5 * cos(obj.draw_phi), 0 + obj.r_mallet/5 * sin(obj.draw_phi),'g','parent',obj.table.container);
-            hold on
-            obj.table.t = fill(0 + obj.r_mallet/5 * cos(obj.draw_phi), 0 + obj.r_mallet/5 * sin(obj.draw_phi),'g','parent',obj.table.container);
+%             obj.table.dot = fill(0 + obj.r_mallet/5 * cos(obj.draw_phi), 0 + obj.r_mallet/5 * sin(obj.draw_phi),'g','parent',obj.table.container);
+%             hold on
+%             obj.table.dotv = fill(0 + obj.r_mallet/5 * cos(obj.draw_phi), 0 + obj.r_mallet/5 * sin(obj.draw_phi),'g','parent',obj.table.container);
+%             hold on
+            obj.table.cp = plot(0,0, 'r*','color',[1 0 0],'parent',obj.table.container);
+            obj.table.traj = fill(0 + obj.r_mallet/5 * cos(obj.draw_phi), 0 + obj.r_mallet/5 * sin(obj.draw_phi),'b','parent',obj.table.container);
             hold on
             % Drawing the top goal area
             obj.table.goal_t = fill(obj.x_goal_t,obj.y_goal_t,'b','Facecolor',[0 0 0],'edgecolor', 'none','parent',obj.table.container);
@@ -211,6 +212,30 @@ classdef Visualizer < handle
             hold on
             delete(obj.table.t)
             obj.table.t = plot(q(1,:), q(2,:), 'b','color',[0 0 1],'parent',obj.table.container);
+            drawnow
+        end
+        
+        % Update the position of the puck and the mallet
+        function obj = UpdateVisualizationPID(obj, path, pos)
+            % Get position of the puck and mallet
+            data = obj.classKineticModel.getPositionData();
+            obj.x_puck = data.x_puck(1) + obj.r_puck * cos(obj.draw_phi);
+            obj.y_puck = data.x_puck(2) + obj.r_puck * sin(obj.draw_phi);
+            obj.x_mallet = data.x_mallet(1) + obj.r_mallet * cos(obj.draw_phi);
+            obj.y_mallet = data.x_mallet(2) + obj.r_mallet * sin(obj.draw_phi);
+            % Drawing the puck
+            delete(obj.table.puck);
+            obj.table.puck = fill(obj.x_puck,obj.y_puck,'r','parent',obj.table.container);
+            hold on
+            % Drawing the user's mallet
+            delete(obj.table.mallet);
+            obj.table.mallet = fill(obj.x_mallet, obj.y_mallet,'k','parent',obj.table.container);
+            hold on
+            delete(obj.table.cp)
+            obj.table.cp = plot(path(1,:), path(2,:), 'r*-','color',[1 0 0],'parent',obj.table.container);
+            hold on
+            delete(obj.table.traj)
+            obj.table.traj = plot(pos(1,:), pos(2,:), 'b','color',[0 0 1],'parent',obj.table.container);
             drawnow
         end
     end

@@ -45,8 +45,8 @@ classdef TaskAiming < handle
         % CONSTRUCTOR
         function obj = TaskAiming(InitialState,SimulationParameter)
             % Generate instance of class
-            obj.KineticModel = AirHockey.KineticModel();
-            obj.Visualizer = AirHockey.Visualizer(obj.KineticModel);
+            obj.KineticModel = AirHockeySim.KineticModel();
+            obj.Visualizer = AirHockeySim.Visualizer(obj.KineticModel);
             
             % Get game data
             data = obj.KineticModel.getGameData();
@@ -144,6 +144,15 @@ classdef TaskAiming < handle
                     % simulation
                     break 
                 end
+                
+                % TODO: below takes the first collision
+                % wouldnt it be better to take the last one?
+                
+                % If collision detected:
+                % split at last collsision and compute
+                % tr1 = x0y0t0 -> xc yc, tc ,vx=0, vy=0
+                % tr2 = xc yc, tc ,vx=0, vy=0 -> xt yt, tt ,vxt, vyt
+                % Reuse genTraj
                 
                 % in case of a collision with a wall, repeat trajectory
                 % calculation from where the collision occured.

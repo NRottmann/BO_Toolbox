@@ -1,5 +1,5 @@
-classdef AirHockey
-% Date: 29.08.2019
+classdef AirHockeyPD
+% Date: 14.10.2019
 % Author: Michael Werner   
 
     properties(Access=public)
@@ -15,7 +15,7 @@ classdef AirHockey
     end
     
     methods
-        function obj = AirHockey()
+        function obj = AirHockeyPD()
             obj.InitialState.x_puck = [0;0];
             obj.InitialState.v_puck = [0;0];
             obj.InitialState.x_mallet = [0;-0.5];
@@ -25,8 +25,8 @@ classdef AirHockey
             obj.SimulationParameter.dt = 0.01;
             obj.SimulationParameter.T = 5;
             
-            taskAiming = AirHockeySim.TaskAiming(obj.InitialState,obj.SimulationParameter);
-            [vars, objectiveFunc] = taskAiming.CreateOptimizationTask();
+            taskAimingPD = AirHockeySim.TaskAimingPD(obj.InitialState,obj.SimulationParameter);
+            [vars, objectiveFunc] = taskAimingPD.CreateOptimizationTask();
             obj.vars = vars;
             obj.objectiveFunc = objectiveFunc;
             obj.num_vars = length(obj.vars);
@@ -37,7 +37,8 @@ classdef AirHockey
         end
         
         function s = visualize(obj, varargin)
-           s = obj.taskAiming.evaluatePolicy(varargin, 1);
+           taskAimingPD = AirHockeySim.TaskAimingPD(obj.InitialState,obj.SimulationParameter);
+           s = taskAimingPD.evaluatePolicy(varargin, 1);
         end
     end
 end

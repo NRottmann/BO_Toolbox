@@ -45,8 +45,8 @@ classdef TaskAimingFeature < handle
         % CONSTRUCTOR
         function obj = TaskAimingFeature(InitialState,SimulationParameter)
             % Generate instance of class
-            obj.KineticModel = AirHockey.KineticModel();
-            obj.Visualizer = AirHockey.Visualizer(obj.KineticModel);
+            obj.KineticModel = AirHockeySim.KineticModel();
+            obj.Visualizer = AirHockeySim.Visualizer(obj.KineticModel);
             
             % Get game data
             data = obj.KineticModel.getGameData();
@@ -125,7 +125,7 @@ classdef TaskAimingFeature < handle
             qdd = zeros(2, length(t0:obj.SimulationParameter.dt:t1));
             while 1
                 % Define the trajectory of the mallet
-                Waypoints = real([x0,x1;y0,y1])
+                Waypoints = real([x0,x1;y0,y1]);
                 TimeOfArrival = [t0_tmp; t1];
                 Velocities = [vx0,vx1; vy0,vy1];
                 TimeSamples = t0_tmp:obj.SimulationParameter.dt:t1;
