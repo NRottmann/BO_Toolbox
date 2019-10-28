@@ -18,6 +18,15 @@ classdef Branin
         minimize = true;
     end
     
+    properties(Access=private)
+       a = 1;
+       b = 5.1/(4*pi^2);
+       c = 5/pi;
+       r = 6;
+       s = 10;
+       t = 1/(8*pi);
+    end
+    
     methods
         function obj = Branin()
            % 
@@ -25,7 +34,8 @@ classdef Branin
         
         function z = call(obj,x, y)
             %CALL calculates the value of the branin function at x and y
-            z = (y-(5.1/4*pi^2)+x^2 + 5/pi*x -6)^2 + 10*(1-1/8*pi)*cos(x) + 10;
+            z = obj.a*(y - obj.b*x^2 + obj.c*x - obj.r)^2 + ...
+                obj.s*(1 - obj.t)*cos(x) + obj.s;
         end
     end
 end

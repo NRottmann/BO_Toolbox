@@ -81,8 +81,6 @@ end
 
 % We iterate over maxIter iterations
 for i=i_start:params.maxIter
-    disp(i);
-    disp(fix(clock))
     x_i = x(:,1:params.numSeed + (i-1));
     y_i = y(1:params.numSeed + (i-1));
     

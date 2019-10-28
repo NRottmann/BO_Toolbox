@@ -65,8 +65,8 @@ end
 numVar = length(vars);
 
 % extract functions
-Cov = str2func(params.CovFunc);
-AcqFun = str2func(params.AcqFun);
+Cov = str2func(char(params.CovFunc));
+AcqFun = str2func(char(params.AcqFun));
 f_gen = str2func(char(params.FeatureGenerator));
 f_gen = f_gen(numVar, params.numFeature, vars);
 

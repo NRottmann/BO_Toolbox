@@ -47,7 +47,7 @@ defaultargs = {'maxIter', 30, 'numSeed', 3, 'seedPoints', [],...
                'CovFunc', 'se_kernel_var', 'numFeature', 0,...
                'minimize', false};
 params = setargs(defaultargs, varargin);
-AcqFun = str2func(params.AcqFun);
+AcqFun = str2func(char(params.AcqFun));
 
 % Get number of variables to optimize
 numVar = length(vars);

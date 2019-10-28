@@ -34,7 +34,7 @@ classdef NeuralNet
                  (obj.architecture(layer_idx) + 1) * obj.architecture(layer_idx+1));
              a =  y * W + b;
              y =  1.0 ./ (1 + exp(-a));
-
+             
              w = w((obj.architecture(layer_idx) + 1) * obj.architecture(layer_idx+1):end); 
            end
            f = y';

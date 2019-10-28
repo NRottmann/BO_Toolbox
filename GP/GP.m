@@ -57,7 +57,7 @@ x(:,III) = [];
 y(III)   = [];
 
 % Defining the call for the covariance function
-Cov = str2func(params.CovFunc);
+Cov = str2func(char(params.CovFunc));
 
 % rewriting parameter
 sigma_n = params.noise;

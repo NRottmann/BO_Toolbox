@@ -48,7 +48,7 @@ defaultargs = {'maxIter', 30, 'numSeed', 3, 'seedPoints', [],...
                'numFeature' 2, 'CovFunc', 'se_kernel_var',...
                'minimize', false}; 
 params = setargs(defaultargs, varargin);
-AcqFun = str2func(params.AcqFun);
+AcqFun = str2func(char(params.AcqFun));
 PRandom = min(max(params.PRandom, 0), 1);
 d = params.numFeature;
 

@@ -1,4 +1,4 @@
-classdef AirHockeyPD
+classdef AirHockeySpline
 % Date: 14.10.2019
 % Author: Michael Werner   
 
@@ -15,7 +15,7 @@ classdef AirHockeyPD
     end
     
     methods
-        function obj = AirHockeyPD()
+        function obj = AirHockeySpline()
             mode = 1;
             switch mode
                 case 1
@@ -39,8 +39,8 @@ classdef AirHockeyPD
             obj.SimulationParameter.dt = 0.01;
             obj.SimulationParameter.T = 5;
             
-            taskAimingPD = AirHockeySim.TaskAimingPD(obj.InitialState,obj.SimulationParameter);
-            [vars, objectiveFunc] = taskAimingPD.CreateOptimizationTask();
+            taskAiming = AirHockeySim.TaskAimingSpline(obj.InitialState,obj.SimulationParameter);
+            [vars, objectiveFunc] = taskAiming.CreateOptimizationTask();
             obj.vars = vars;
             obj.objectiveFunc = objectiveFunc;
             obj.num_vars = length(obj.vars);
@@ -51,8 +51,8 @@ classdef AirHockeyPD
         end
         
         function s = visualize(obj, varargin)
-           taskAimingPD = AirHockeySim.TaskAimingPD(obj.InitialState,obj.SimulationParameter);
-           s = taskAimingPD.evaluatePolicy(varargin, 1);
+           taskAiming = AirHockeySim.TaskAimingSpline(obj.InitialState,obj.SimulationParameter);
+           s = taskAiming.evaluatePolicy(varargin, 1);
         end
     end
 end

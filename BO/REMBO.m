@@ -49,9 +49,9 @@ function [results] = REMBO(fun,vars,varargin)
 defaultargs = {'maxIter', 30, 'numSeed', 3, 'seedPoints', [],...
                'sampleSize', 1000, 'AcqFun', 'EI',...
                'CovFunc', 'se_kernel_var', 'numFeatures', 2,...
-               'minimize', false}; 
+               'minimize', false, 'AMatrix', []}; 
 params = setargs(defaultargs, varargin);
-AcqFun = str2func(params.AcqFun);
+AcqFun = str2func(char(params.AcqFun));
 
 % Get number of variables in input space
 numVar = length(vars);
@@ -70,14 +70,21 @@ for i=1:numFeature
                                         [-sqrt(numFeature),...
                                         sqrt(numFeature)])];
 end
-A = rand(numVar, numFeature);
+if isempty(params.AMatrix)
+    A = rand(numVar, numFeature);
+else
+    A = params.AMatrix;
+    if size(A, 1) ~= numVar  || size(A, 2) ~= numFeature
+       error('Invalid size of projection matrix A'); 
+    end
+end
 % Generate storage capacities
 x = zeros(numVar,params.maxIter + params.numSeed);
 f = zeros(numFeature,params.maxIter + params.numSeed);
 y = zeros(params.maxIter + params.numSeed,1);
 y_max = zeros(params.maxIter + params.numSeed,1);
 
-% Start by generating numSeed seedpoints for the BO algorithm
+% Start by generating numSeed seedpoints for the REMBO algorithm
 for i=1:numSeed
     f_seed = struct();
     if isempty(params.seedPoints)
@@ -96,9 +103,7 @@ for i=1:numSeed
             f(j,i) = f_seed.(fvars(j).Name);
         end
     end
-    x_seed = A*cell2mat(struct2cell(f_seed));
-    % project x_f into input space bounds if nessessary
-    x_seed = min(max(x_seed, xmin), xmax);
+    x_seed = project(A, cell2mat(struct2cell(f_seed)), xmin, xmax);
     x(:, i) = x_seed;
     for j=1:numVar
         x_fun.(vars(j).Name) = x_seed(j);
@@ -127,10 +132,8 @@ for i=1:params.maxIter
     
     % Get the next function value
     x_fun = struct();
-    x_next = A*f_next;
+    x_next = project(A, f_next, xmin, xmax);
     
-    % project x_next into input space bounds if nessessary
-    x_next = min(max(x_next, xmin), xmax);
     x(:, params.numSeed + i) = x_next;
     for j=1:numVar
         x_fun.(vars(j).Name) = x_next(j);        
@@ -165,4 +168,10 @@ for j=1:numVar
     results.bestParams.(vars(j).Name) = x_best(j);
 end
 results.A = A;
+end
+
+function x = project(A, f, varmin, varmax)
+    x = A*f; % map f into D-dimensions
+    x = min(max(x, -1), 1); % clipp
+    x = ((x+1)/2).*(varmax-varmin) + varmin;
 end

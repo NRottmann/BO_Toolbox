@@ -58,9 +58,10 @@ end
 numVar = length(vars);
 
 % extract functions
-Cov = str2func(params.CovFunc);
-AcqFun = str2func(params.AcqFun);
-f_gen = str2func('NeuralNet');
+Cov = str2func(char(params.CovFunc));
+AcqFun = str2func(char(params.AcqFun));
+%f_gen = str2func('NeuralNet');
+f_gen = str2func('LinearFeature');
 f_gen = f_gen(numVar, params.numFeature, vars);
 
 % Generate storage capacities
