@@ -63,6 +63,13 @@ classdef Visualizer < handle
         draw_phi = 0:pi/50:2*pi;    % defines how many points are used for drawing the circles
         
         table;                  % The table struct which holds all visualizationd data
+        
+        colors = [  0,  75,  90; % dark blue
+                  228,  32,  50, % red
+                  149, 188,  14; % green
+                  250, 187,   0; % yellow
+                  236, 116,   4; % orange
+                 ]/255;
     end
     methods (Access = public)
         % CONSTRUCTOR
@@ -123,28 +130,28 @@ classdef Visualizer < handle
             set(obj.table.container,'dataaspectratio',[1 1 1]);
             hold on
             % Drawing the edge around the hockey table
-            obj.table.edge = fill(obj.x_edge,obj.y_edge,'b','Facecolor',[0 0 1],'parent',obj.table.container);
+            obj.table.edge = fill(obj.x_edge,obj.y_edge,'b','Facecolor',obj.colors(1,:),'parent',obj.table.container);
             hold on
             % Drawing the playing area
             obj.table.field = fill(obj.x_field,obj.y_field,'b','facecolor', [1 1 1],'edgecolor','none','parent',obj.table.container);
             hold on
             % Drawing the center circle
-            obj.table.centercircle = plot(obj.x_center, obj.y_center, 'b','color',[0 0 1],'linewidth',4,'parent',obj.table.container);
+            obj.table.centercircle = plot(obj.x_center, obj.y_center, 'b','color',obj.colors(1,:),'linewidth',4,'parent',obj.table.container);
             hold on  
             % Drawing the bottom goal crease
             obj.table.creaseb = plot(obj.w_goal*[-1/2 -1/2 1/2 1/2], ...
                         [-obj.l_field/2 -obj.l_field/2 + obj.l_goal -obj.l_field/2 + obj.l_goal -obj.l_field/2],...
-                           'color',[0 0 1],'linewidth',2,'parent',obj.table.container);
+                           'color',obj.colors(1,:),'linewidth',2,'parent',obj.table.container);
             hold on
             % Drawing the top goal crease
             obj.table.creaset = plot(obj.w_goal*[-1/2 -1/2 1/2 1/2], ...
                         [obj.l_field/2 obj.l_field/2 - obj.l_goal obj.l_field/2 - obj.l_goal obj.l_field/2],...
-                           'color',[0 0 1],'linewidth',2,'parent',obj.table.container);
+                           'color',obj.colors(1,:),'linewidth',2,'parent',obj.table.container);
             % Drawing the centerline
-            obj.table.centerline = plot([-obj.w_field/2 obj.w_field/2],[0 0],'color',[0 0 1],'linewidth',4,'parent',obj.table.container);
+            obj.table.centerline = plot([-obj.w_field/2 obj.w_field/2],[0 0],'color',obj.colors(1,:),'linewidth',4,'parent',obj.table.container);
             hold on
             % Drawing the puck
-            obj.table.puck = fill(obj.x_puck,obj.y_puck,'r','parent',obj.table.container);
+            obj.table.puck = fill(obj.x_puck,obj.y_puck,'r', 'facecolor', obj.colors(2,:), 'parent',obj.table.container);
             hold on
             % Drawing the user's mallet
             obj.table.mallet = fill(obj.x_mallet, obj.y_mallet,'k','parent',obj.table.container);
@@ -153,7 +160,7 @@ classdef Visualizer < handle
 %             hold on
 %             obj.table.dotv = fill(0 + obj.r_mallet/5 * cos(obj.draw_phi), 0 + obj.r_mallet/5 * sin(obj.draw_phi),'g','parent',obj.table.container);
 %             hold on
-            obj.table.cp = plot(0,0, 'r*','color',[1 0 0],'parent',obj.table.container);
+            obj.table.cp = plot(0,0, 'r*','color',obj.colors(2,:),'parent',obj.table.container);
             obj.table.traj = fill(0 + obj.r_mallet/5 * cos(obj.draw_phi), 0 + obj.r_mallet/5 * sin(obj.draw_phi),'b','parent',obj.table.container);
             hold on
             % Drawing the top goal area
@@ -225,17 +232,17 @@ classdef Visualizer < handle
             obj.y_mallet = data.x_mallet(2) + obj.r_mallet * sin(obj.draw_phi);
             % Drawing the puck
             delete(obj.table.puck);
-            obj.table.puck = fill(obj.x_puck,obj.y_puck,'r','parent',obj.table.container);
+            obj.table.puck = fill(obj.x_puck,obj.y_puck,'r','facecolor', obj.colors(2,:), 'parent',obj.table.container);
             hold on
             % Drawing the user's mallet
             delete(obj.table.mallet);
             obj.table.mallet = fill(obj.x_mallet, obj.y_mallet,'k','parent',obj.table.container);
             hold on
             delete(obj.table.cp)
-            obj.table.cp = plot(path(1,:), path(2,:), 'r*-','color',[1 0 0],'parent',obj.table.container);
+            obj.table.cp = plot(path(1,:), path(2,:), '*-','color',obj.colors(4,:),'parent',obj.table.container, 'linewidth', 2);
             hold on
             delete(obj.table.traj)
-            obj.table.traj = plot(pos(1,:), pos(2,:), 'b','color',[0 0 1],'parent',obj.table.container);
+            obj.table.traj = plot(pos(1,:), pos(2,:),'color', obj.colors(5,:),'parent',obj.table.container, 'linewidth', 2);
             drawnow
         end
     end
