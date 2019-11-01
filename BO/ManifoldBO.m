@@ -79,11 +79,16 @@ end
                                    params.numSeed, params.seedPoints,...
                                    params.minimize);
 
+% extract bounds of input space
+range = reshape([vars(:).Range], 2, [] )';
+xmin = range(:, 1);
+xmax = range(:, 2);
 % We iterate over maxIter iterations
+tic;
+try
 for i=i_start:params.maxIter
     x_i = x(:,1:params.numSeed + (i-1));
     y_i = y(1:params.numSeed + (i-1));
-    
     % Optimize hyperparameters
     [weights, covParam, mtgpParam] = optimize(x_i, y_i, architecture, Cov);
     
@@ -98,8 +103,10 @@ for i=i_start:params.maxIter
                       'CovFunc', params.CovFunc, 'CovParam', covParam);
     
     % map feature into input space
+    x_i = (x_i-xmin)./(xmax-xmin)*2 -1;
     [x_next, ~] = MTGPWrapper(f_x, f_x_next, x_i, mtgpParam);  
-    
+    x_next = (x_next + 1)/2.*(xmax-xmin) + xmin;
+    x_next = min(max(x_next, xmin), xmax); % clipp
     % Get the next function value
     x_fun = struct();
     for j=1:numVar
@@ -114,6 +121,16 @@ for i=i_start:params.maxIter
     if ~isempty(params.Checkpointfile)
         save(params.Checkpointfile, 'i', 'x', 'y', 'y_max')
     end
+    disp(strcat(num2str(i), {': Elapsed time is '}, num2str(toc), ' seconds.'));
+    tic;
+end
+catch ME
+   disp('An Error occured. This run will be reset.')
+   if isfile(params.Checkpointfile)
+        delete(params.Checkpointfile)
+   end
+   results = ManifoldBO(fun,vars,varargin{:});
+   return
 end
 
 % Give back the results
