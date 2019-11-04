@@ -1,4 +1,4 @@
-function results = HIBO(fun,vars,varargin)
+function results = HIBO_forRand(fun,vars,varargin)
 % Bayesian Optimization
 %
 % Syntax:
@@ -67,25 +67,17 @@ for i=1:params.numSeed
 end
 
 % We iterate over maxIter iterations
-T_History = cell(params.maxIter,1);
-f_history = zeros(params.numFeature,maxIter);
+randomFun = RandomFun();
 for i=1:params.maxIter
     % Generate Features
-    % T = linearCombination(x,y,params.numFeature);
-    
-    T = [1/sqrt(10), 1/sqrt(10), 1/sqrt(10), 1/sqrt(10), 1/sqrt(10), 1/sqrt(10), ...
-                                    1/sqrt(10), 1/sqrt(10), 1/sqrt(10), 1/sqrt(10)];                          
-    f = T * x;
-    T_History{i} = T;
-    
-    % Get the range for the learned features by combining them linearly
-    rangeFeature = zeros(params.numFeature,2);
-    for j=1:params.numFeature
-        for l=1:numVar
-            rangeFeature(j,1) = rangeFeature(j,1) + vars(l).Range(1) * T(j,l);
-            rangeFeature(j,2) = rangeFeature(j,2) + vars(l).Range(2) * T(j,l);
-        end
+    f = zeros(1,params.maxIter+params.numSeed);
+    for j=1:1:(i-1)+params.numSeed
+        f(:,j) = randomFun.featureFun(x(1),x(2));
     end
+        
+    % Get the range for the learned features by combining them linearly
+    rangeFeature = [-10, 10; -10, 10];
+
     % Generate uniformly distributed sample distribution for the features
     s_f = zeros(params.numFeature,params.sampleSize);
     for l=1:params.numFeature
@@ -97,7 +89,6 @@ for i=1:params.maxIter
 
     % Determine next feature evaluation point using GP and an acquisition function
     x_next_f = AcqFun(f(:,1:(params.numSeed + (i-1))),s_f,y(1:(params.numSeed + (i-1))));
-    f_history(:,i) = x_next_f;
     
     % Generate uniformly distributed sample distribution for the parameters
     s = zeros(numVar,params.sampleSize);
@@ -109,9 +100,7 @@ for i=1:params.maxIter
     end
     % Put both together, to make them dependent
     x_combined = [x; f];
-    dX_Feature = (rangeFeature(1,2) - rangeFeature(1,1));
-    s_combined = [s; x_next_f*0.05*dX_Feature*(0.5 - rand(1,params.sampleSize))];
-    % s_combined = [s; x_next_f*ones(1,params.sampleSize)];
+    s_combined = [s; x_next_f*ones(1,params.sampleSize)];
     % Determine next evaluation point using GP and an acquisition function
     x_combined_next = AcqFun(x_combined(:,1:(params.numSeed + (i-1))),s_combined,y(1:(params.numSeed + (i-1))));
     x_next = x_combined_next(1:numVar,1);
@@ -133,8 +122,6 @@ for i=1:params.maxIter
 end
 
 % Give back the results
-results.featureHistory = T_History;
-results.nextFeature = f_history;
 results.valueHistory = y;
 results.maxValueHistory = y_max;
 [y_max,id_max] = max(y);

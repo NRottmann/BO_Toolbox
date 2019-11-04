@@ -86,16 +86,6 @@ for j=1:1:iter
     disp(j)
 end
 
-%% Get value of feature
-featureValues = zeros(numSeed + maxIter,1);
-for j=1:iter
-    for i=numSeed+1:1:numSeed + maxIter
-        val = (1/sqrt(2)) * resultsFeaturesHIBO{j}(i-numSeed);
-        featureValues(i) = featureValues(i) + test_fun_2(val,val);
-    end
-end
-featureValues = featureValues ./ iter;
-
 %% Plots
 figure;
 plot(mean(resultsHistoryBO,2))
@@ -105,8 +95,6 @@ hold on
 plot(mean(resultsHistoryHIBO,2))
 hold on
 plot(mean(resultsHistoryHIBO_opt,2))
-hold on
-plot(featureValues)
 legend('BO','BO opt','HIBO','HIBO opt','Feature')
 
 figure;
