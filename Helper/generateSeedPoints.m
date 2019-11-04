@@ -49,7 +49,7 @@ for i=1:numSeed
             x(j,i) = x_fun.(vars(j).Name);
         end
     end
-    y(i) = func(x_fun);
+    y(i) = func(cell2mat(struct2cell(x_fun)));
     if minimize
        y(i) = -y(i); 
     end
