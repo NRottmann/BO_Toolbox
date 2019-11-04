@@ -1,4 +1,4 @@
-function [mu,sigma, params] = MTGPWrapper(x, s, y, params)
+function [mu,sigma, params, data] = MTGPWrapper(x, s, y, params)
 % MTGPWrapper 
 %
 % Syntax:
@@ -46,8 +46,10 @@ data = {covfunc_x, x_train, y_train, d, irank, nx, idx_kf, idx_kx};
 if isempty(params)
     [logtheta_all, deriv_range] = init_mtgp_default(x_train, covfunc_x, d, irank);
     [logtheta_all, ~] = learn_mtgp(logtheta_all, deriv_range, data);
+elseif strcmp(params, "init")
+    [logtheta_all, ~] = init_mtgp_default(x_train, covfunc_x, d, irank);
 else
-    logtheta_all = params;    
+    logtheta_all = params; 
 end
 
 %% Predict
@@ -57,5 +59,4 @@ mu = mu';
 sigma = sigma';
 if nargout >= 3
     params = logtheta_all;
-end
-
+end   

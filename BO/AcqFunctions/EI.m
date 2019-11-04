@@ -1,4 +1,4 @@
-function [x_next, alpha] = EI(x,s,y, varargin)
+function [x_next, alpha, idx] = EI(x,s,y, varargin)
 % Acquisition Function for BO - Expected Improvement
 % Syntax:
 %   results = EI(x,s,y);
@@ -18,6 +18,7 @@ function [x_next, alpha] = EI(x,s,y, varargin)
 % Output:
 %   x_next - point of s with highest EI
 %   alpha - PI values for all points in s
+%   idx - the index of x_next in s
 %
 % Date: 07. July, 2019
 % Author: Michael Werner
@@ -33,6 +34,9 @@ a = (mu - tau) .* normcdf(tmp) + sigma .* normpdf(tmp);
 x_next = s(:,ID);
 if nargout > 1
    alpha = a; 
+end
+if nargout > 2
+   idx = ID;
 end
 end
 

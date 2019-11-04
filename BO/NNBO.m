@@ -1,16 +1,15 @@
-function results = HIBO(fun,vars,varargin)
-% HiBO: Hierarchical Acquisition Functions for Bayesian Optimization
+function results = NNBO(fun,vars,varargin)
+% NNBO: Bayesian Optimization with an NN-Kernel
 %
 % Syntax:
-%   results = HIBO(fun,vars);
-%   results = HIBO(fun,vars,'propertyname','propertyvalue',...)
+%   results = NNBO(fun,vars);
+%   results = NNBO(fun,vars,'propertyname','propertyvalue',...)
 %   
 % Description:
-%   Extension of the Bayesian Optimization algorithm. With a feature
-%   gernerator a feature space is created. By optimizing the acquisition
-%   function in feauture space a current optimal feature is selected. The
-%   feature is then used to constrain the parameter space while optimizing
-%   a second acquisition function.
+%   Extension of the Bayesian Optimization algorithm. The parameterspace
+%   will be reduced by a neural network. The generated feature space is then 
+%   is then used by a GP and a Acquisition function to find a next good
+%   feature. the corresponding parameter is then applied to the function
 %
 % Input:
 %   fun:    function handle, as fun = @(x) yourFunction(x.y,x.y,...)
@@ -26,8 +25,6 @@ function results = HIBO(fun,vars,varargin)
 %   AcqFun - name of the acquisition function (string) which should be used
 %            (default: 'EI')
 %   numFeature - number of features (default: 2)
-%   FeatureGenerator - defines how the feautre is created 
-%                      (default: 'NeuralNet')
 %   CovFunc - the covariance/kernel function (default: 'se_kernel_var')
 %   minimize - set true to minimize a function (default: false)
 %
@@ -37,28 +34,24 @@ function results = HIBO(fun,vars,varargin)
 %      results.maxValueHistory - for each iteration the best function value
 %                                so far
 %      results.paramHistory - all parameters used for evaluation
-%      results.nextFeature - for each iteration the created feature
 %      results.bestValue - best seen function value
 %      results.bestParams - parameters for the best function value
 %
 % used subfunction: setargs, generateSeedPoints, sampleFromRange
 %
-% Date: 02. July, 2019
-% Author: Nils Rottmann
-% Date: 15.8.2019
+% Date: 30. August, 2019
 % Author: Michael Werner
 
 % Default values
 defaultargs = {'maxIter', 30, 'numSeed', 3, 'seedPoints', [],...
                'sampleSize', 1000, 'AcqFun', 'EI', 'numFeature', 2,...
-               'FeatureGenerator', 'NeuralNet',...
                'CovFunc', 'se_kernel_var', 'minimize', false}; 
 params = setargs(defaultargs, varargin);
 
 % Check params
 if params.numSeed < 2
     params.numSeed = 2;
-    disp('HIBO: numSeed has to be at least 2! Set numSeed to 2!')
+    disp('MYBO: numSeed has to be at least 2! Set numSeed to 2!')
 end
 
 % Get number of variables to optimize
@@ -67,7 +60,8 @@ numVar = length(vars);
 % extract functions
 Cov = str2func(char(params.CovFunc));
 AcqFun = str2func(char(params.AcqFun));
-f_gen = str2func(char(params.FeatureGenerator));
+%f_gen = str2func('NeuralNet');
+f_gen = str2func('LinearFeature');
 f_gen = f_gen(numVar, params.numFeature, vars);
 
 % Generate storage capacities
@@ -81,7 +75,6 @@ y_max = zeros(params.maxIter + params.numSeed,1);
                                    params.minimize);
 
 % We iterate over maxIter iterations
-f_history = zeros(params.numFeature,maxIter);
 for i=1:params.maxIter
     x_iter = x(:, 1:(params.numSeed + (i-1)));
     y_iter = y(1:(params.numSeed + (i-1)));
@@ -91,27 +84,19 @@ for i=1:params.maxIter
     % Generate Features
     f = f_gen.getfeature(x_iter, f_genParam);
     
-    % Generate uniformly distributed sample distribution for the features
-    s_f = sampleFromRange(params.numFeature, params.sampleSize,...
-                          f_gen.getbounds());
-        
-    % Determine next feature evaluation point using GP and an acquisition function
-    x_next_f = AcqFun(f,  s_f, y_iter,...
-                      'CovFunc', params.CovFunc, 'CovParam', covParam);
-    f_history(:,i) = x_next_f;
-    
-    % Generate uniformly distributed sample distribution for the parameters
+    % Generate uniformly distributed sample distribution
     s = sampleFromRange(numVar, params.sampleSize, vars);
-        
-    % Put both together, to make them dependent
-    x_combined = [x_iter; f];
-    s_combined = [s; x_next_f*ones(1,params.sampleSize)];
     
-    % Determine next evaluation point using GP and an acquisition function
-    x_combined_next = AcqFun(x_combined(:,1:(params.numSeed + (i-1))),...
-                             s_combined,y(1:(params.numSeed + (i-1))),...
-                             'CovFunc', params.CovFunc);
-    x_next = x_combined_next(1:numVar,1);   
+    % Compute features for the sample points
+    s_f = f_gen.getfeature(s, f_genParam);
+    
+    % Determine next feature evaluation point using GP and an acquisition function
+    [~, ~, idx_next] = AcqFun(f,  s_f, y_iter,...
+                              'CovFunc', params.CovFunc,...
+                              'CovParam', covParam);
+    
+    % Extract next evaluation point
+    x_next = s(:, idx_next);
     
     % Get the next function value
     x_fun = struct();
@@ -137,7 +122,6 @@ else
     results.maxValueHistory = y_max;
     results.bestValue = ymax;
 end
-results.nextFeature = f_history;
 for j=1:numVar
     results.bestParams.(vars(j).Name) = x(j,id_max);
 end

@@ -1,4 +1,4 @@
-function results = REMBO(fun,vars,varargin)
+function [results] = REMBO(fun,vars,varargin)
 % Bayesian Optimization with Random Embedding
 %
 % Syntax:
@@ -17,89 +17,149 @@ function results = REMBO(fun,vars,varargin)
 %   vars:   variables as optimizableVariable, e.g [x,y,...] 
 %
 % Propertyname/-value pairs:
+%   maxIter - number of interations performed by BO (default: 30)
+%   numSeed - number of points initialy evaluated (default: 3)
+%   seedPoints - given seed Points of size (n x numSeed) with n as the
+%                number of variables (default: [])
+%   sampleSize - number of samples from the acquisition function 
+%                (default: 1000)
 %   AcqFun - name of the acquisition function (string) which should be used
-%   (default: EI)
-%   numFeatures - number of dimensions in feature space
+%   (default: 'EI')
+%   CovFunc - the covariance/kernel function (default: 'se_kernel_var')
+%   numFeature - number of features (default: 2)
+%   minimize - set true to minimize a function (default: false)
 %
 % Output:
 %   results
+%      results.valueHistory - values received from function evaluation
+%      results.maxValueHistory - for each iteration the best function value
+%                                so far
+%      results.paramHistory - all parameters used for evaluation
+%      results.nextFeature - for each iteration the created feature
+%      results.bestValue - best seen function value
+%      results.bestParams - parameters for the best function value
+%      results.A - Matrix A which projects from feature into input space
 %
-% used subfunction: setargs
+% used subfunction: setargs, generateSeedPoints, sampleFromRange
 %
-% Date: 08. July, 2019
+% Date: 15.8.2019
 % Author: Michael Werner
 
 % Default values
-defaultargs = {'maxIter', 30, 'numSeed', 3, 'seedPoints', [], 'sampleSize', 1000,...
-    'numFeatures', 1, 'AcqFun', 'EI'}; 
+defaultargs = {'maxIter', 30, 'numSeed', 3, 'seedPoints', [],...
+               'sampleSize', 1000, 'AcqFun', 'EI',...
+               'CovFunc', 'se_kernel_var', 'numFeatures', 2,...
+               'minimize', false, 'AMatrix', []}; 
 params = setargs(defaultargs, varargin);
-AcqFun = str2func(params.AcqFun);
+AcqFun = str2func(char(params.AcqFun));
 
 % Get number of variables in input space
 numVar = length(vars);
 numFeature = params.numFeatures;
+
+% extract bounds of input space
+range = reshape([vars(:).Range], 2, [] )';
+xmin = range(:, 1);
+xmax = range(:, 2);
+clear range
+
 % generate feature variables
 fvars = [];
 for i=1:numFeature
-    fvars = [fvars, optimizableVariable(strcat("f", num2str(i)),...
-        [-sqrt(numFeature), sqrt(numFeature)])];
+    fvars = [fvars, optimizableVariable(strcat('f', num2str(i)),...
+                                        [-sqrt(numFeature),...
+                                        sqrt(numFeature)])];
 end
-A = rand(numVar, numFeature);
+if isempty(params.AMatrix)
+    A = rand(numVar, numFeature);
+else
+    A = params.AMatrix;
+    if size(A, 1) ~= numVar  || size(A, 2) ~= numFeature
+       error('Invalid size of projection matrix A'); 
+    end
+end
 % Generate storage capacities
-x = zeros(numFeature,params.maxIter + params.numSeed);
+x = zeros(numVar,params.maxIter + params.numSeed);
+f = zeros(numFeature,params.maxIter + params.numSeed);
 y = zeros(params.maxIter + params.numSeed,1);
 y_max = zeros(params.maxIter + params.numSeed,1);
 
-% Start by generating numSeed seedpoints for the BO algorithm
+% Start by generating numSeed seedpoints for the REMBO algorithm
 for i=1:numSeed
-    f = struct();
-    for j=1:numFeature
-        f.(fvars(j).Name) = rand() * (fvars(j).Range(2) - fvars(j).Range(1)) ...
-                            +  fvars(j).Range(1);
-        x(j,i) = f.(fvars(j).Name);
+    f_seed = struct();
+    if isempty(params.seedPoints)
+        for j=1:numFeature
+            f_seed.(fvars(j).Name) = rand() * (fvars(j).Range(2) - fvars(j).Range(1)) ...
+                                +  fvars(j).Range(1);
+            f(j,i) = f_seed.(fvars(j).Name);
+        end
+    else
+        % if seed points are given, copy them
+        if length(params.seedPoints(1,:)) ~= numSeed || length(params.seedPoints(:,1)) ~= numFeature
+            error('Seed Points have wrong size!')
+        end
+        for j=1:numFeature
+            f_seed.(fvars(j).Name) = params.seedPoints(j,i);
+            f(j,i) = f_seed.(fvars(j).Name);
+        end
     end
-    x_f = A*cell2mat(struct2cell(f));
+    x_seed = project(A, cell2mat(struct2cell(f_seed)), xmin, xmax);
+    x(:, i) = x_seed;
     for j=1:numVar
-        x_fun.(vars(j).Name) = x_f(j);
+        x_fun.(vars(j).Name) = x_seed(j);
     end
     
     y(i) = fun(x_fun);
+    if params.minimize
+       y(i) = -y(i); 
+    end
     y_max(i) = max(y(1:i));
 end
 
 % We iterate over maxIter iterations
 for i=1:params.maxIter
     % Generate uniformly distributed sample distribution
-    s = zeros(numFeature,params.sampleSize);
-    for j=1:params.sampleSize
-        for l=1:numFeature
-            s(l,j) = rand() * (fvars(l).Range(2) - fvars(l).Range(1)) ...
-                            +  fvars(l).Range(1);
-        end
-    end
+    s = sampleFromRange(numFeature, params.sampleSize, fvars);
+        
     % Determine next evaluation point using GP and an acquisition function
-    f_next = AcqFun(x(:,params.numSeed + (i-1)),s,y(params.numSeed + (i-1)));
+    f_next = AcqFun(f(:,params.numSeed + (i-1)),s,...
+                    y(params.numSeed + (i-1)), 'CovFunc', params.CovFunc);
+    
     % Store feature
     for j=1:numFeature
-        x(j,params.numSeed + i) = f_next(j);
+        f(j,params.numSeed + i) = f_next(j);
     end
+    
     % Get the next function value
     x_fun = struct();
-    x_next = A*f_next;
+    x_next = project(A, f_next, xmin, xmax);
+    
+    x(:, params.numSeed + i) = x_next;
     for j=1:numVar
         x_fun.(vars(j).Name) = x_next(j);        
     end
+    
     y(params.numSeed + i) = fun(x_fun);
+    if params.minimize
+       y(params.numSeed + i) = -y(params.numSeed + i); 
+    end
     y_max(params.numSeed + i) = max(y(1:(params.numSeed + i)));
 end
 
 % Give back the results
-results.valueHistory = y;
-results.maxValueHistory = y_max;
+[ymax,id_max] = max(y);
+if params.minimize
+    results.valueHistory = -y;
+    results.maxValueHistory = -y_max;
+    results.bestValue = -ymax;
+else
+    results.valueHistory = y;
+    results.maxValueHistory = y_max;
+    results.bestValue = ymax;
+end
+results.nextFeature = f;
 results.paramHistory = x;
-[y_max,id_max] = max(y);
-results.bestValue = y_max;
-f_best = x(:, id_max);
+f_best = f(:, id_max);
 for j=1:numFeature
     results.bestFeatures.(fvars(j).Name) = f_best(j);
 end
@@ -107,9 +167,11 @@ x_best = A*f_best;
 for j=1:numVar
     results.bestParams.(vars(j).Name) = x_best(j);
 end
-
+results.A = A;
 end
 
-
-
-
+function x = project(A, f, varmin, varmax)
+    x = A*f; % map f into D-dimensions
+    x = min(max(x, -1), 1); % clipp
+    x = ((x+1)/2).*(varmax-varmin) + varmin;
+end

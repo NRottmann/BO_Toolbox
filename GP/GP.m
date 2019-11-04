@@ -57,14 +57,14 @@ x(:,III) = [];
 y(III)   = [];
 
 % Defining the call for the covariance function
-Cov = str2func(params.CovFunc);
+Cov = str2func(char(params.CovFunc));
 
 % rewriting parameter
 sigma_n = params.noise;
 
 % Creating covariance matrices
 if isempty(params.CovParam)  % If no parameters are given take default values
-    covParam = covParamOptim(x,y,params.CovFunc);
+    covParam = covParamOptim(x,y,Cov);
     [K] = Cov(x,x,'CovParam',covParam);
     [K_s] = Cov(x,s,'CovParam',covParam);
     [K_ss] = Cov(s,s,'CovParam',covParam);
@@ -89,28 +89,20 @@ end
 
 % Log Likelihood Function, TODO: Write some documentation and put this in
 % own function
-function param = covParamOptim(x,y,CovFunc)
+function covParam = covParamOptim(x,y,Cov)
 % Optimize parameter for a defined CovFunc
-
-% define handle for covariance function
-Cov = str2func(CovFunc);
 
 % Get number of hyperparameters
 [~,paramTest] = Cov(x,x,'struct',true);
-nvar = length(paramTest);
+nvarCov = length(paramTest);
 
-% Use fminunc
-param_0 = ones(nvar,1);
-options = optimoptions(@fminunc,'Display','off');
-param = fminunc(@logLikelihood,param_0,options);
-
-% % use genetic algorithms
-% options = optimoptions(@ga,'Display','off');
-% param = ga(@logLikelihood,nvar,options);
-
+% start optimization
+param = optimizeParameter(@logLikelihood, [nvarCov]);
     function L = logLikelihood(param)
+        param = cell2mat(param(1));
         K = Cov(x,x,'CovParam',param);
         L = (1/2) * y' * inv(K + 0.001*eye(length(K(:,1)))) * y + (1/2) * log(norm(K));
     end
+covParam = cell2mat(param(1));
 end
 
