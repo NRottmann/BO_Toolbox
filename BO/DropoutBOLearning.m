@@ -139,7 +139,7 @@ for i=1:params.maxIter
     end
     y_max(params.numSeed + i) = max(y(1:(params.numSeed + i)));
     % Adjust importance vector
-    importance(d_idx) = importance(d_idx) + abs(mean(y(1:(params.numSeed + i - 1))) - y(params.numSeed + i));
+    importance(d_idx) = importance(d_idx) + abs(mean(y((params.numSeed + i - 1))) - y(params.numSeed + i));
 end
 
 % Give back the results

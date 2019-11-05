@@ -32,13 +32,16 @@ classdef Ackley
         
         function s = call(obj, varargin)
             %CALL calculates the value of the Ackley function          
-            if length(varargin) ~= obj.d
+            if ~iscell(varargin) && length(varargin) ~= obj.d
                error(strcat('The number of input parameters (',...
                             num2str(length(varargin)), ...
                             ') does not match the number of dimension: ',...
                             num2str(obj.d)));
             end
             x = cell2mat(varargin);
+            if isstruct(x)
+               x = cell2mat(struct2cell(x));
+            end
             s = -obj.a * exp(-obj.b*sqrt(1/obj.d * sum(x.^2))) ...
                 - exp(1/obj.d*sum(cos(obj.c*x))) ...
                 + obj.a + exp(1);
