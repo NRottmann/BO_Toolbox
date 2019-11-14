@@ -12,11 +12,11 @@ To perform classic Bayesian Optimization on a 30-dimensioanl Rosenbrock function
 
 ```matlab
 f = Rosenbrock(30);
-BO(@f.call,f.vars, 'minimize', f.minimize, 'maxIter', 50)
+results=BO(@f.call,f.vars, 'minimize', f.minimize, 'maxIter', 50)
 ```
 
 Another example is the optimization vor the Dropout for Bayesian Optimization, at the Ackley function.
 ```matlab
 f = Ackley(40);
-DropoutBO(@f.call,f.vars, 'minimize', f.minimize, 'maxIter', 50)
+results=DropoutBO(@f.call,f.vars, 'minimize', f.minimize, 'maxIter', 50)
 ```
