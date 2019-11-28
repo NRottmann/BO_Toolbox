@@ -1,4 +1,4 @@
-function results = HIBO(fun,vars,varargin)
+function results = HIBOMod(fun,vars,varargin)
 % HiBO: Hierarchical Acquisition Functions for Bayesian Optimization
 %
 % Syntax:
@@ -82,6 +82,7 @@ y_max = zeros(params.maxIter + params.numSeed,1);
 
 % We iterate over maxIter iterations
 f_history = zeros(params.numFeature,maxIter);
+% try
 for i=1:params.maxIter
     x_iter = x(:, 1:(params.numSeed + (i-1)));
     y_iter = y(1:(params.numSeed + (i-1)));
@@ -119,9 +120,9 @@ for i=1:params.maxIter
     s_combined = [s; x_next_f*ones(1,params.sampleSize)];
     
     % Determine next evaluation point using GP and an acquisition function
-    x_combined_next = AcqFun(x_combined(:,1:(params.numSeed + (i-1))),...
+    x_combined_next = EICond(x_combined(:,1:(params.numSeed + (i-1))),...
                              s_combined,y(1:(params.numSeed + (i-1))),...
-                             'CovFunc', params.CovFunc);
+                             params.numFeature);
     x_next = x_combined_next(1:numVar,1);   
     
     % Get the next function value
@@ -136,6 +137,11 @@ for i=1:params.maxIter
     end
     y_max(params.numSeed + i) = max(y(1:(params.numSeed + i)));
 end
+% catch ME
+%    disp('An Error occured. This run will be reset.')
+%    results = HIBOMod(fun,vars,varargin{:});
+%    return
+% end
 
 % Give back the results
 [ymax,id_max] = max(y);
@@ -177,6 +183,9 @@ params = optimizeParameter(@logLikelihood, [nvarCov, f_gen.num_param]);
         K = Cov(f_x,f_x,'CovParam',covParam);
         L = (1/2) * (y'/(K + 0.01*eye(length(K(:,1))))) * y...
             + (1/2) * log(norm(K));
+        if L == -Inf || L ==Inf
+            pause(1)
+        end
     end
 
 % extract parameters
