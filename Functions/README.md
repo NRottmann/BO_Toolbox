@@ -1,4 +1,13 @@
-this folder contains the implemtation of typical benchmark functions and an air hockey simulation.
+this folder contains the implementation of typical benchmark functions and an air hockey simulation.
+
+## How to use functions
+Assumed we have a function called ```Func```. Then you can access the function by it attributes ```num_vars``` and ```vars```. Additionally you can compute the function value, using the ```call``` method of this class.
+```matlab
+f = Func(10);    % create 10 dimensional version of the function
+v = f.vars;      % access data about the variables of the function (type is optimizableVariable)
+n = f.num_vars;  % access the number of variables
+s = f.call(1:10) % comput function value for input (1,...,10)
+```
 
 ## How to add new functions
 Each function is defined as a class object. It is required that the class has the public attribures vars and minimize. Additionally a public method call is required, to compute the function.
