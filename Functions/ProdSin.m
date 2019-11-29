@@ -28,13 +28,16 @@ classdef ProdSin
         
         function p = call(obj, varargin)
             %CALL calculates the value of the Product of Sines function
-            if length(varargin) ~= obj.d
+            if ~iscell(varargin) && length(varargin) ~= obj.d
                error(strcat('The number of input parameters (',...
                             num2str(length(varargin)), ...
                             ') does not match the number of dimension: ',...
                             num2str(obj.d)));
             end
             x = cell2mat(varargin);
+            if isstruct(x)
+               x = cell2mat(struct2cell(x));
+            end
             p = sin(x(1)) * prod(sin(x));
         end
     end

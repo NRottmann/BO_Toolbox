@@ -5,10 +5,10 @@ clc
 initToolbox
 
 %% Go 
-iter = 100;
-numFeatures = 5;
-iterBO = 50;
-f = Ackley(30);
+iter = 20;
+numFeatures = 2;
+iterBO = 200;
+f = ProdSin(10);
 for i=1:1:iter
     results{i} = DropoutBO(@f.call,f.vars, 'minimize', f.minimize,'numFeature', numFeatures, 'maxIter', iterBO);
     resultsLearning{i} = DropoutBOLearning(@f.call,f.vars, 'minimize', f.minimize,'numFeature', numFeatures, 'maxIter', iterBO);

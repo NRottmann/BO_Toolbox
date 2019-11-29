@@ -73,7 +73,7 @@ randBase = 1:1:numVar;
 % We iterate over maxIter iterations
 for i=1:params.maxIter
     % Generate a random vector, for ascending order
-    randVec = randBase.^((i-1)/10);
+    randVec = randBase.^((i-1)/50);
     randVec = randVec/sum(randVec);
     for ii=1:1:numVar-1
         randVec(ii+1) = randVec(ii) + randVec(ii+1);
